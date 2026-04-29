@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAOS — Hyper-V 4 VMs Guide</title>
+<style>
+  :root {
+    --c-bg: #f8fafc;
+    --c-card: #ffffff;
+    --c-border: #e2e8f0;
+    --c-text: #0f172a;
+    --c-muted: #64748b;
+    --c-blue: #0369a1;
+    --c-blue-bg: #eff6ff;
+    --c-green: #065f46;
+    --c-green-bg: #f0fdf4;
+    --c-red: #991b1b;
+    --c-red-bg: #fef2f2;
+    --c-yellow: #92400e;
+    --c-yellow-bg: #fffbeb;
+    --c-purple: #5b21b6;
+    --c-purple-bg: #f5f3ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Sarabun", "Noto Sans Thai", "Segoe UI", sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    margin: 0; padding: 0;
+    line-height: 1.7;
+  }
+
+  .container { max-width: 980px; margin: 0 auto; padding: 24px; }
+
+  header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+    color: white;
+    padding: 28px 24px;
+    margin-bottom: 24px;
+  }
+
+  header h1 { margin: 0 0 6px 0; font-size: 24px; font-weight: 700; }
+  header .sub { color: #c7d2fe; font-size: 13px; }
+  header .meta { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; font-size: 12px; color: #e0e7ff; }
+
+  /* TOC */
+  nav.toc {
+    background: white;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  nav.toc strong { font-size: 13px; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  nav.toc ol { margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; column-count: 2; gap: 20px; }
+  nav.toc li { margin-bottom: 4px; }
+  nav.toc a { color: #3730a3; text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  /* Section card */
+  .card {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 14px 20px;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .card-header .num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+    background: rgba(0,0,0,0.15);
+    color: white;
+  }
+
+  .s-compare  .card-header { background: #1e1b4b; color: white; }
+  .s-license  .card-header { background: #065f46; color: white; }
+  .s-prepare  .card-header { background: #0369a1; color: white; }
+  .s-host     .card-header { background: #0f766e; color: white; }
+  .s-network  .card-header { background: #1d4ed8; color: white; }
+  .s-storage  .card-header { background: #7c3aed; color: white; }
+  .s-vms      .card-header { background: #065f46; color: white; }
+  .s-migrate  .card-header { background: #b45309; color: white; }
+  .s-missing  .card-header { background: #9f1239; color: white; }
+  .s-risk     .card-header { background: #374151; color: white; }
+  .s-tips     .card-header { background: #0369a1; color: white; }
+
+  .card-body { padding: 18px 20px; }
+
+  /* Callouts */
+  .callout {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .callout.warn    { background: var(--c-yellow-bg); border-left-color: #f59e0b; }
+  .callout.danger  { background: var(--c-red-bg);    border-left-color: #dc2626; }
+  .callout.info    { background: var(--c-blue-bg);   border-left-color: #3b82f6; }
+  .callout.success { background: var(--c-green-bg);  border-left-color: #10b981; }
+  .callout.purple  { background: var(--c-purple-bg); border-left-color: #7c3aed; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+  .callout ul, .callout ol { margin: 6px 0; padding-left: 20px; }
+  .callout li { margin-bottom: 3px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  th { background: #f1f5f9; font-weight: 700; padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--c-border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .yes  { color: #16a34a; font-weight: 700; }
+  .no   { color: #dc2626; font-weight: 700; }
+  .part { color: #d97706; font-weight: 700; }
+
+  /* Config grid */
+  .cfg {
+    background: #f8fafc;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .cfg-row { display: grid; grid-template-columns: 210px 1fr; border-bottom: 1px solid var(--c-border); }
+  .cfg-row:last-child { border-bottom: none; }
+  .cfg-k { padding: 8px 12px; font-weight: 600; background: #e2e8f0; font-size: 12px; }
+  .cfg-v { padding: 8px 12px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+  .cfg-v.normal { font-family: inherit; font-size: 13px; }
+
+  /* Checklist */
+  .cklist { list-style: none; padding: 0; margin: 0; }
+  .cklist li {
+    display: flex; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid var(--c-border);
+    align-items: flex-start; font-size: 13px;
+  }
+  .cklist li:last-child { border-bottom: none; }
+  .cklist .cb {
+    width: 18px; height: 18px; border: 2px solid #94a3b8;
+    border-radius: 3px; flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; cursor: pointer; transition: all 0.15s;
+  }
+  .cklist li.done .cb { background: #10b981; border-color: #10b981; color: white; }
+  .cklist li.done .ci-title { text-decoration: line-through; color: var(--c-muted); }
+  .cklist li { cursor: pointer; border-radius: 4px; padding: 9px 4px; }
+  .cklist li:hover { background: #f8fafc; }
+  .ci { flex: 1; }
+  .ci-title { font-weight: 600; }
+  .ci-detail { font-size: 12px; color: var(--c-muted); margin-top: 2px; }
+
+  /* Tags */
+  .tag {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 10px; font-size: 11px; font-weight: 600;
+    margin-top: 4px; margin-right: 3px;
+  }
+  .tag-eng  { background: #fef3c7; color: #92400e; }
+  .tag-dba  { background: #dbeafe; color: #1e40af; }
+  .tag-it   { background: #dcfce7; color: #166534; }
+  .tag-pm   { background: #e2e8f0; color: #334155; }
+  .tag-warn { background: #fee2e2; color: #991b1b; }
+  .tag-new  { background: #ede9fe; color: #5b21b6; }
+
+  /* Risk table */
+  .risk-high { color: #dc2626; font-weight: 700; }
+  .risk-med  { color: #d97706; font-weight: 700; }
+  .risk-low  { color: #16a34a; font-weight: 700; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .dot-h { background: #dc2626; }
+  .dot-m { background: #d97706; }
+  .dot-l { background: #16a34a; }
+
+  /* Section h3 */
+  h3 { font-size: 13px; font-weight: 700; margin: 16px 0 8px 0; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Badge */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .badge-ok    { background: #dcfce7; color: #166534; }
+  .badge-warn  { background: #fee2e2; color: #991b1b; }
+  .badge-info  { background: #dbeafe; color: #1e40af; }
+  .badge-note  { background: #fef3c7; color: #92400e; }
+
+  code {
+    background: #e2e8f0; padding: 1px 5px; border-radius: 4px;
+    font-size: 12px; font-family: "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  footer {
+    text-align: center; font-size: 12px; color: var(--c-muted);
+    padding: 20px; border-top: 1px solid var(--c-border); margin-top: 8px;
+  }
+
+  @media print {
+    body { background: white; }
+    nav.toc { display: none; }
+    .card { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>HAOS Migration — Hyper-V 4 VMs: สิ่งที่ต้องเตรียม ระวัง และแนะนำ</h1>
+    <div class="sub">Lenovo ThinkSystem SR650 V4 | Windows Server 2025 Hyper-V Host + 4 Windows VMs</div>
+    <div class="meta">
+      <span>CPU: Xeon 6517P ×2 (32c/64t)</span>
+      <span>RAM: 512 GB DDR5</span>
+      <span>NVMe: 3.2TB ×8 | SATA: 960GB ×2</span>
+      <span>License: WS2025 Std 16core ×2</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<nav class="toc">
+  <strong>สารบัญ</strong>
+  <ol>
+    <li><a href="#compare">เปรียบเทียบ Hyper-V vs ESXi สำหรับ project นี้</a></li>
+    <li><a href="#license">License — ตรวจสอบความพร้อม</a></li>
+    <li><a href="#prepare">สิ่งที่ต้องเตรียมก่อนติดตั้ง</a></li>
+    <li><a href="#host">ติดตั้งและตั้งค่า Hyper-V Host</a></li>
+    <li><a href="#network">Virtual Switch &amp; Network</a></li>
+    <li><a href="#storage">Storage Layout (Volumes)</a></li>
+    <li><a href="#vms">VM Configuration ทั้ง 4 ตัว</a></li>
+    <li><a href="#migrate">Migration Strategy (ESXi → Hyper-V)</a></li>
+    <li><a href="#missing">สิ่งที่ขาดใน BOM / ต้องเพิ่ม</a></li>
+    <li><a href="#risk">ความเสี่ยงและข้อควรระวัง</a></li>
+    <li><a href="#tips">คำแนะนำเพิ่มเติม</a></li>
+  </ol>
+</nav>
+
+<!-- ========== 1: COMPARE ========== -->
+<div class="card s-compare" id="compare">
+  <div class="card-header"><div class="num">1</div> เปรียบเทียบ Hyper-V vs ESXi สำหรับ project นี้</div>
+  <div class="card-body">
+    <table>
+      <thead>
+        <tr>
+          <th>ประเด็น</th>
+          <th>Hyper-V (WS2025)</th>
+          <th>ESXi 8</th>
+          <th>สำหรับ HAOS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>ค่าใช้จ่าย Hypervisor</strong></td>
+          <td class="yes">ฟรี (รวมใน WS2025 ที่ซื้อแล้ว)</td>
+          <td class="no">ต้องซื้อ vSphere license เพิ่ม</td>
+          <td><span class="badge badge-ok">Hyper-V ประหยัดกว่า</span></td>
+        </tr>
+        <tr>
+          <td><strong>Windows VM License</strong></td>
+          <td class="yes">ใช้ WS2025 Std ×2 ที่มีอยู่ได้ (4 VMs)</td>
+          <td class="yes">ใช้ WS2025 Std ×2 ได้เช่นกัน</td>
+          <td><span class="badge badge-ok">เท่ากัน</span></td>
+        </tr>
+        <tr>
+          <td><strong>SQL Server บน VM</strong></td>
+          <td class="yes">รองรับ — ต้องตั้งค่าเพิ่มเติม</td>
+          <td class="yes">รองรับ — ตั้งค่าคล้ายกัน</td>
+          <td><span class="badge badge-ok">เท่ากัน</span></td>
+        </tr>
+        <tr>
+          <td><strong>Host OS Surface</strong></td>
+          <td class="no">Windows OS เต็ม (กว้างกว่า)</td>
+          <td class="yes">ESXi kernel-only (แคบกว่า)</td>
+          <td><span class="badge badge-note">ควรใช้ Server Core ลด surface</span></td>
+        </tr>
+        <tr>
+          <td><strong>Windows Update Host</strong></td>
+          <td class="no">ต้อง reboot host = VMs down ทั้งหมด</td>
+          <td class="yes">ESXi update แยกจาก VM</td>
+          <td><span class="badge badge-warn">วางแผน maintenance window</span></td>
+        </tr>
+        <tr>
+          <td><strong>Live Migration</strong></td>
+          <td class="part">ได้ — แต่ต้องมี cluster (2+ nodes)</td>
+          <td class="part">vMotion — แต่ต้องมี vCenter</td>
+          <td><span class="badge badge-note">Single server = ไม่ได้ทั้งคู่</span></td>
+        </tr>
+        <tr>
+          <td><strong>VM Snapshot</strong></td>
+          <td class="no">Checkpoint — ห้ามใช้บน SQL production</td>
+          <td class="part">VMware snapshot — ระวังสำหรับ SQL</td>
+          <td><span class="badge badge-warn">ทั้งคู่ = ไม่แนะนำบน SQL</span></td>
+        </tr>
+        <tr>
+          <td><strong>VM Migration จากของเดิม</strong></td>
+          <td class="yes">Repl+ELK เดิมเป็น Hyper-V → Export/Import ง่าย</td>
+          <td class="no">ต้อง convert VHDX → VMDK</td>
+          <td><span class="badge badge-ok">Hyper-V ง่ายกว่าสำหรับ Repl VM</span></td>
+        </tr>
+        <tr>
+          <td><strong>P2V (Bare metal → VM)</strong></td>
+          <td class="yes">Disk2VHD (Microsoft free tool)</td>
+          <td class="part">VMware Converter (deprecated)</td>
+          <td><span class="badge badge-ok">Hyper-V มีเครื่องมือดีกว่า</span></td>
+        </tr>
+        <tr>
+          <td><strong>Management UI</strong></td>
+          <td class="part">Hyper-V Manager / Windows Admin Center</td>
+          <td class="yes">vSphere Client (HTML5)</td>
+          <td><span class="badge badge-note">ESXi UI ดีกว่าเล็กน้อย</span></td>
+        </tr>
+        <tr>
+          <td><strong>Disk I/O Performance</strong></td>
+          <td class="yes">ใกล้เคียงกัน บน NVMe modern hardware</td>
+          <td class="yes">ใกล้เคียงกัน</td>
+          <td><span class="badge badge-ok">เท่ากัน (NVMe ลด gap)</span></td>
+        </tr>
+        <tr>
+          <td><strong>ReFS / NTFS</strong></td>
+          <td class="yes">รองรับ ReFS (more resilient กว่า NTFS)</td>
+          <td class="no">ใช้ VMFS เท่านั้น</td>
+          <td><span class="badge badge-ok">Hyper-V + ReFS ดีกว่า</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout success">
+      <strong>✅ สรุป: Hyper-V เหมาะกว่าสำหรับ project นี้เพราะ</strong>
+      (1) ไม่มีค่าใช้จ่าย hypervisor เพิ่ม · (2) migration Repl VM ง่ายกว่า · (3) P2V tools ดีกว่า · (4) license WS2025 ที่มีอยู่ครอบคลุมทุกอย่าง
+    </div>
+  </div>
+</div>
+
+<!-- ========== 2: LICENSE ========== -->
+<div class="card s-license" id="license">
+  <div class="card-header"><div class="num">2</div> License — ตรวจสอบความพร้อม</div>
+  <div class="card-body">
+    <div class="callout danger">
+      <strong>🔴 Critical: วิธี license Hyper-V Host มีผลต่อจำนวน VM ที่ใช้ได้</strong>
+    </div>
+
+    <h3>Windows Server 2025 Standard — กฎที่ต้องรู้</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">ที่มีใน BOM</div><div class="cfg-v normal">Windows Server 2025 Standard (16core) ×2</div></div>
+      <div class="cfg-row"><div class="cfg-k">Physical Cores ที่ครอบคลุม</div><div class="cfg-v normal">16 core × 2 = 32 cores ✓ (ตรงกับ Xeon 6517P ×2)</div></div>
+      <div class="cfg-row"><div class="cfg-k">สิทธิ์ Windows VM</div><div class="cfg-v normal">2 VMs per license × 2 licenses = สิทธิ์ได้ 4 Windows VMs ✓</div></div>
+      <div class="cfg-row"><div class="cfg-k">เงื่อนไขสำคัญ</div><div class="cfg-v normal">Host OS ต้องใช้ Server Core (ไม่ใช้ Desktop Experience) — ถ้าใช้ Desktop GUI บน Host จะนับเป็น 1 ใน 4 VMs เหลือแค่ 3</div></div>
+      <div class="cfg-row"><div class="cfg-k">แนะนำ</div><div class="cfg-v normal">ติดตั้ง Windows Server 2025 Server Core + เปิด Hyper-V role เท่านั้น → ได้ 4 VMs เต็ม</div></div>
+    </div>
+
+    <h3>SQL Server License</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">ที่มีอยู่</div><div class="cfg-v normal">SQL Server 2022 Enterprise 8-core ×1</div></div>
+      <div class="cfg-row"><div class="cfg-k">ใช้กับ Hyper-V ได้ไหม</div><div class="cfg-v normal">✓ ได้ — license บน VM (per virtual core) รองรับ 8 vCPU</div></div>
+      <div class="cfg-row"><div class="cfg-k">Replica VM</div><div class="cfg-v normal">passive DR = ไม่ต้อง license เพิ่ม ✓ | readable secondary = ต้องซื้อเพิ่ม</div></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>รายการ</th><th>สถานะ</th><th>หมายเหตุ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hyper-V Host license</td><td class="yes">✓ ครอบคลุม</td><td>ใช้ WS2025 Std ที่มีอยู่ — ต้องใช้ Server Core</td></tr>
+        <tr><td>4 Windows VMs</td><td class="yes">✓ ครอบคลุม</td><td>2 licenses × 2 VMs = 4 VMs</td></tr>
+        <tr><td>SQL Enterprise Master</td><td class="yes">✓ ครอบคลุม</td><td>8-core Ent ที่มี = 8 vCPU</td></tr>
+        <tr><td>SQL Replica (passive)</td><td class="yes">✓ ไม่ต้องเพิ่ม</td><td>passive DR ใช้ Ent license เดิมได้</td></tr>
+        <tr><td>Windows Admin Center</td><td class="yes">✓ ฟรี</td><td>ต้องดาวน์โหลดแยก (ไม่อยู่ใน BOM)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== 3: PREPARE ========== -->
+<div class="card s-prepare" id="prepare">
+  <div class="card-header"><div class="num">3</div> สิ่งที่ต้องเตรียมก่อนติดตั้ง</div>
+  <div class="card-body">
+    <h3>Software ที่ต้องดาวน์โหลดก่อนวัน Install</h3>
+    <ul class="cklist" id="prepList">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Windows Server 2025 ISO (Server Core + Desktop Experience)</div>
+        <div class="ci-detail">ดาวน์โหลดจาก VLSC / Microsoft Evaluation Center — ใช้ Server Core สำหรับ Host</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Lenovo custom drivers สำหรับ Windows Server 2025</div>
+        <div class="ci-detail">Chipset, NIC (Broadcom 57414), RAID 940-16i driver — ดาวน์โหลดจาก Lenovo Support ก่อน</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Firmware update package (XCC / Lenovo UpdateXpress)</div>
+        <div class="ci-detail">BIOS, BMC, 940-16i, NVMe — ทำก่อน OS install เสมอ</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Windows Admin Center (WAC) installer</div>
+        <div class="ci-detail">ดาวน์โหลดจาก microsoft.com/en-us/windows-server/windows-admin-center — ฟรี ใช้จัดการ Hyper-V ได้สะดวก</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-new">แนะนำ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Disk2VHD (Microsoft Sysinternals)</div>
+        <div class="ci-detail">สำหรับ P2V — convert bare metal VM (Panacea-DB, App, RPT-App) → VHDX</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">SQL Server 2022 ISO + Service Pack/CU ล่าสุด</div>
+        <div class="ci-detail">ถ้า restore จาก snapshot ต้องมี ISO สำรองไว้กรณีที่ต้องติดตั้งใหม่</div>
+        <span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Monitoring Agent installer (Zabbix/PRTG)</div>
+        <div class="ci-detail">เตรียมไว้สำหรับติดตั้งทุก VM หลัง restore</div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+    </ul>
+
+    <h3>การเตรียม Network ก่อนติดตั้ง</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">กำหนด IP ให้ Hyper-V Host Management (static IP)</div>
+        <div class="ci-detail">Host ต้องมี IP สำหรับ remote management — แยกจาก VM network</div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">เตรียม IP สำหรับทุก VM ล่วงหน้า (4 IPs)</div>
+        <div class="ci-detail">Panacea-DB, Repl+ELK, App, RPT-App — ควรใช้ IP เดิมจากระบบเก่าเพื่อลด reconfiguration</div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจสอบ SFP+ Transceiver ใช้งานได้กับ Switch ปลายทาง</div>
+        <div class="ci-detail">Broadcom 57414 เป็น 25GbE — switch ปลายทางรองรับ 25GbE หรือต้อง fallback 10GbE</div>
+        <span class="tag tag-it">IT</span><span class="tag tag-warn">ตรวจก่อน</span>
+      </div></li>
+    </ul>
+
+    <h3>เตรียม Backup ของระบบเก่าก่อน P2V</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ทำ full SQL backup (DB + Log) บน bare metal เดิมก่อนทุกครั้ง</div>
+        <div class="ci-detail">ต้องมี restore point ล่าสุดก่อนเริ่ม P2V — เก็บไว้นอก server</div>
+        <span class="tag tag-dba">DBA</span><span class="tag tag-warn">สำคัญมาก</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Export Hyper-V VM (Panacea-Repl+ELK) จาก host เดิม</div>
+        <div class="ci-detail">ใช้ Hyper-V Export → save ลง external storage / network share</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 4: HOST SETUP ========== -->
+<div class="card s-host" id="host">
+  <div class="card-header"><div class="num">4</div> ติดตั้งและตั้งค่า Hyper-V Host</div>
+  <div class="card-body">
+    <div class="callout info">
+      <strong>💡 ใช้ Server Core (ไม่ใช้ Desktop Experience) สำหรับ Host</strong>
+      ลด attack surface, เหลือ RAM ให้ VM มากขึ้น (~2-4 GB), และไม่นับเป็น 1 ใน 4 VM สิทธิ์
+    </div>
+
+    <h3>Host Config ที่แนะนำ</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">OS</div><div class="cfg-v normal">Windows Server 2025 <strong>Server Core</strong> (ไม่ใช้ Desktop)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Role</div><div class="cfg-v normal">Hyper-V role เท่านั้น (ไม่ install role อื่นบน Host)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Install Target</div><div class="cfg-v normal">Boot Array (SATA RAID 1, 480 GB)</div></div>
+      <div class="cfg-row"><div class="cfg-k">RAM สำหรับ Host</div><div class="cfg-v normal">Reserve 8-16 GB สำหรับ Hyper-V hypervisor overhead (แนะนำ 16 GB)</div></div>
+      <div class="cfg-row"><div class="cfg-k">CPU Power Plan</div><div class="cfg-v normal">High Performance — ตั้งผ่าน <code>powercfg /s SCHEME_MIN</code> หรือ BIOS</div></div>
+      <div class="cfg-row"><div class="cfg-k">NUMA</div><div class="cfg-v normal">Xeon 6517P แต่ละ socket = 1 NUMA node — ตั้งค่า VM ให้ไม่ข้าม NUMA</div></div>
+    </div>
+
+    <h3>PowerShell Commands สำหรับ Host Setup</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Install Hyper-V role</div>
+        <div class="ci-detail"><code>Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งชื่อ Host และ join domain (ถ้ามี)</div>
+        <div class="ci-detail"><code>Rename-Computer -NewName "HAOS-HV01" -Restart</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งค่า NTP sync กับ NTP server ของโรงพยาบาล</div>
+        <div class="ci-detail"><code>w32tm /config /manualpeerlist:"NTP_SERVER_IP" /syncfromflags:manual /reliable:yes /update</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งค่า Power Plan เป็น High Performance</div>
+        <div class="ci-detail"><code>powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Disable Hyper-V Dynamic Memory สำหรับทุก VM (ตั้งทีหลังหลัง create VM)</div>
+        <div class="ci-detail">SQL VM ต้องใช้ Static Memory เท่านั้น — Dynamic Memory กระทบ buffer pool</div>
+        <span class="tag tag-dba">DBA</span><span class="tag tag-warn">สำคัญ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Enable Remote Management (WinRM) สำหรับ WAC</div>
+        <div class="ci-detail"><code>Enable-PSRemoting -Force</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+    </ul>
+
+    <div class="callout warn">
+      <strong>⚠️ ระวัง: Windows Update บน Host = VM down ทั้งหมด</strong>
+      ต้องวางแผน maintenance window ล่วงหน้าทุกครั้ง — แนะนำ: ปิด Automatic Update บน Host, ทำ manual update เฉพาะ window ที่กำหนด
+    </div>
+  </div>
+</div>
+
+<!-- ========== 5: NETWORK ========== -->
+<div class="card s-network" id="network">
+  <div class="card-header"><div class="num">5</div> Virtual Switch &amp; Network Setup</div>
+  <div class="card-body">
+    <div class="callout info">
+      <strong>💡 แนะนำ: SET (Switch Embedded Teaming)</strong>
+      ใช้ SET แทน NIC Teaming แบบเดิม — SET รวม 2 NIC เข้า vSwitch โดยตรง ไม่ต้อง create team ก่อน รองรับ SR-IOV และ RDMA
+    </div>
+
+    <h3>Virtual Switch Design</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">vSwitch "VM-External"</div><div class="cfg-v normal">External type | vmnic0 (25GbE) → VM Traffic + Host Management<br>ใช้ VLAN tagging แยก Management vs VM Network</div></div>
+      <div class="cfg-row"><div class="cfg-k">vSwitch "VM-Storage"</div><div class="cfg-v normal">Internal/Private type → สำหรับ VM-to-VM traffic ถ้าต้องการ (optional)</div></div>
+      <div class="cfg-row"><div class="cfg-k">NIC 2 (vmnic1)</div><div class="cfg-v normal">สำรองสำหรับ Backup traffic / อนาคตทำ SET ได้</div></div>
+    </div>
+
+    <h3>PowerShell: Create Virtual Switch</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">สร้าง External vSwitch ผูกกับ NIC จริง</div>
+        <div class="ci-detail"><code>New-VMSwitch -Name "VM-External" -NetAdapterName "Ethernet" -AllowManagementOS $true</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Enable SR-IOV บน vSwitch (ถ้า Broadcom 57414 รองรับ)</div>
+        <div class="ci-detail"><code>New-VMSwitch -Name "VM-External" -NetAdapterName "Ethernet" -EnableIov $true</code><br>SR-IOV ลด latency สำหรับ VM network ได้ชัดเจน</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-new">แนะนำ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้ง VLAN ID สำหรับ Management NIC ของ Host</div>
+        <div class="ci-detail"><code>Set-VMNetworkAdapterVlan -ManagementOS -VMNetworkAdapterName "Management OS" -Access -VlanId [MGMT_VLAN]</code></div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Enable VMQ (Virtual Machine Queue) สำหรับทุก VM NIC</div>
+        <div class="ci-detail">VMQ ปรับปรุง network throughput โดยการ distribute processing<br><code>Set-VMNetworkAdapter -VMName "Panacea-DB" -VmqWeight 100</code></div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+    </ul>
+
+    <div class="callout warn">
+      <strong>⚠️ ระวัง: Management NIC ของ Host ต้องไม่หายไปหลัง create vSwitch</strong>
+      ถ้า set vSwitch ผิด Host จะ lose network connection — ทำผ่าน console (iDRAC/XCC) เสมอ ไม่ใช้ RDP
+    </div>
+  </div>
+</div>
+
+<!-- ========== 6: STORAGE ========== -->
+<div class="card s-storage" id="storage">
+  <div class="card-header"><div class="num">6</div> Storage Layout — Volumes สำหรับ Hyper-V</div>
+  <div class="card-body">
+    <div class="callout info">
+      <strong>💡 Hyper-V ใช้ NTFS/ReFS Volumes แทน Datastore (ESXi)</strong>
+      RAID 940-16i สร้าง logical disk → Windows เห็นเป็น Physical Disk → Format เป็น Volume
+    </div>
+
+    <h3>Volume Layout (แทน ESXi Datastore)</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">C: (Boot)</div><div class="cfg-v normal">SATA RAID 1 → 480 GB → NTFS → Windows Server 2025 Host OS</div></div>
+      <div class="cfg-row"><div class="cfg-k">D: Master Data</div><div class="cfg-v normal">NVMe #1-4, RAID 10 → 6.4 TB → <strong>ReFS</strong> → VHDX ของ Master VM (OS + SQL Data + TempDB)</div></div>
+      <div class="cfg-row"><div class="cfg-k">E: Master Log</div><div class="cfg-v normal">NVMe #5-6, RAID 1 → 3.2 TB → <strong>ReFS</strong> → VHDX ของ Master VM (SQL Log เท่านั้น)</div></div>
+      <div class="cfg-row"><div class="cfg-k">F: Shared</div><div class="cfg-v normal">NVMe #7-8, RAID 1 → 3.2 TB → <strong>ReFS</strong> → VHDX ของ Repl+ELK, App, RPT-App</div></div>
+    </div>
+
+    <div class="callout purple">
+      <strong>💜 ทำไมต้องใช้ ReFS แทน NTFS?</strong>
+      <ul>
+        <li><strong>Block Cloning</strong> — copy VHDX เร็วกว่า NTFS มาก (zero data copy)</li>
+        <li><strong>Auto-repair</strong> — ตรวจ corruption ได้เองโดยไม่ต้อง chkdsk</li>
+        <li><strong>VHDX Performance</strong> — Hyper-V + ReFS + Fixed VHDX = I/O เร็วที่สุด</li>
+        <li>⚠️ ReFS ไม่รองรับ compression, encryption, dedup — แต่สำหรับ SQL production ไม่ต้องการ feature เหล่านี้</li>
+      </ul>
+    </div>
+
+    <h3>VHDX Type: Fixed vs Dynamic</h3>
+    <table>
+      <thead><tr><th>Type</th><th>Performance</th><th>Space</th><th>แนะนำ</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Fixed VHDX</strong></td><td class="yes">ดีที่สุด — ไม่มี overhead การ expand</td><td>จอง full ทันที</td><td class="yes">✓ ใช้สำหรับ SQL Master</td></tr>
+        <tr><td>Dynamic VHDX</td><td class="no">แย่กว่า — expand on-demand</td><td>ประหยัด space</td><td class="no">✗ ห้ามใช้กับ SQL Production</td></div></tr>
+        <tr><td>Differencing VHDX</td><td class="no">แย่ที่สุด</td><td>—</td><td class="no">✗ ห้ามใช้กับ Production</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pass-through Disk vs VHDX</h3>
+    <table>
+      <thead><tr><th></th><th>Pass-through Disk</th><th>Fixed VHDX บน ReFS</th></tr></thead>
+      <tbody>
+        <tr><td>Performance</td><td>ดีที่สุด (ตรง)</td><td>ใกล้เคียง (overhead น้อยมากบน ReFS)</td></tr>
+        <tr><td>Checkpoint (Snapshot)</td><td class="no">ทำไม่ได้</td><td class="yes">ทำได้ (แต่ไม่แนะนำบน SQL)</td></tr>
+        <tr><td>Live Migration</td><td class="no">ทำไม่ได้</td><td class="yes">ทำได้</td></tr>
+        <tr><td>Backup VSS</td><td class="part">จำกัด</td><td class="yes">รองรับเต็ม</td></tr>
+        <tr><td>แนะนำ</td><td>—</td><td class="yes">✓ ใช้ Fixed VHDX บน ReFS สำหรับ project นี้</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== 7: VMs ========== -->
+<div class="card s-vms" id="vms">
+  <div class="card-header"><div class="num">7</div> VM Configuration ทั้ง 4 ตัว</div>
+  <div class="card-body">
+
+    <div class="callout warn">
+      <strong>⚠️ Hyper-V VM Settings ที่ต่างจาก ESXi — ต้องตั้งทุกข้อ</strong>
+      <ul>
+        <li>ใช้ Generation 2 (UEFI) — ไม่ใช้ Gen 1 (Legacy BIOS)</li>
+        <li>ใช้ SCSI Controller ไม่ใช้ IDE สำหรับ data disk</li>
+        <li>Static Memory เท่านั้น (ปิด Dynamic Memory) สำหรับ SQL VM</li>
+        <li>ปิด Integration Service "Checkpoints" บน SQL VM</li>
+      </ul>
+    </div>
+
+    <h3>VM 1 — Panacea-DB (Master SQL)</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Generation</div><div class="cfg-v normal">Generation 2 (UEFI, Secure Boot)</div></div>
+      <div class="cfg-row"><div class="cfg-k">vCPU</div><div class="cfg-v normal">8 vCPU — ตั้ง NUMA node preference: Socket 0 (cores 0-15)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Memory</div><div class="cfg-v normal">240 GB — <strong>Static</strong> (ปิด Dynamic Memory) | Minimum = Maximum = 240 GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">SCSI Controller 0</div><div class="cfg-v normal">OS disk (VHDX)</div></div>
+      <div class="cfg-row"><div class="cfg-k">SCSI Controller 1</div><div class="cfg-v normal">SQL Data + TempDB (VHDX) — แยก controller เพิ่ม queue depth</div></div>
+      <div class="cfg-row"><div class="cfg-k">SCSI Controller 2</div><div class="cfg-v normal">SQL Log (VHDX) — แยก controller และแยก volume (E:)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 1 (OS)</div><div class="cfg-v normal">200 GB Fixed VHDX → D:\VMs\PanaceaDB\OS.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 2 (SQL Data)</div><div class="cfg-v normal">5120 GB Fixed VHDX → D:\VMs\PanaceaDB\SQLData.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 3 (TempDB)</div><div class="cfg-v normal">300 GB Fixed VHDX → D:\VMs\PanaceaDB\TempDB.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 4 (SQL Log)</div><div class="cfg-v normal">500 GB Fixed VHDX → <strong>E:\VMs\PanaceaDB\SQLLog.vhdx</strong> (Volume แยก!)</div></div>
+      <div class="cfg-row"><div class="cfg-k">NIC</div><div class="cfg-v normal">2× vNIC ผูกกับ VM-External vSwitch</div></div>
+      <div class="cfg-row"><div class="cfg-k">Checkpoint Type</div><div class="cfg-v normal"><strong>ปิด Checkpoint</strong> สำหรับ SQL VM (Production Checkpoint = ไม่เหมาะ SQL)</div></div>
+    </div>
+
+    <h3>VM 2 — Panacea-Repl+ELK</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Generation</div><div class="cfg-v normal">Generation 2</div></div>
+      <div class="cfg-row"><div class="cfg-k">vCPU</div><div class="cfg-v normal">12 vCPU</div></div>
+      <div class="cfg-row"><div class="cfg-k">Memory</div><div class="cfg-v normal">128 GB Static</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 1 (OS)</div><div class="cfg-v normal">250 GB Fixed VHDX → F:\VMs\PanaceaRepl\OS.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 2 (Replica)</div><div class="cfg-v normal">1024 GB Fixed VHDX → F:\VMs\PanaceaRepl\Replica.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 3 (ELK)</div><div class="cfg-v normal">1024 GB Fixed VHDX → F:\VMs\PanaceaRepl\ELK.vhdx</div></div>
+    </div>
+
+    <h3>VM 3 — Panacea-App</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Generation</div><div class="cfg-v normal">Generation 2</div></div>
+      <div class="cfg-row"><div class="cfg-k">vCPU</div><div class="cfg-v normal">8 vCPU</div></div>
+      <div class="cfg-row"><div class="cfg-k">Memory</div><div class="cfg-v normal">64 GB Static</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 1 (OS)</div><div class="cfg-v normal">200 GB Fixed VHDX → F:\VMs\PanaceaApp\OS.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 2 (Data)</div><div class="cfg-v normal">800 GB Fixed VHDX → F:\VMs\PanaceaApp\Data.vhdx</div></div>
+    </div>
+
+    <h3>VM 4 — Panacea-RPT-App</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Generation</div><div class="cfg-v normal">Generation 2</div></div>
+      <div class="cfg-row"><div class="cfg-k">vCPU</div><div class="cfg-v normal">4 vCPU</div></div>
+      <div class="cfg-row"><div class="cfg-k">Memory</div><div class="cfg-v normal">32 GB Static</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 1 (OS)</div><div class="cfg-v normal">200 GB Fixed VHDX → F:\VMs\PanaceaRpt\OS.vhdx</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk 2 (Data)</div><div class="cfg-v normal">500 GB Fixed VHDX → F:\VMs\PanaceaRpt\Data.vhdx</div></div>
+    </div>
+
+    <h3>RAM Summary</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Master DB</div><div class="cfg-v normal">240 GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">Repl+ELK</div><div class="cfg-v normal">128 GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">App</div><div class="cfg-v normal">64 GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">RPT-App</div><div class="cfg-v normal">32 GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">Hyper-V Host overhead</div><div class="cfg-v normal">16 GB (แนะนำ reserve)</div></div>
+      <div class="cfg-row"><div class="cfg-k">รวม</div><div class="cfg-v normal"><strong>480 GB / 512 GB</strong> — เหลือ buffer 32 GB</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 8: MIGRATION ========== -->
+<div class="card s-migrate" id="migrate">
+  <div class="card-header"><div class="num">8</div> Migration Strategy — ESXi → Hyper-V</div>
+  <div class="card-body">
+
+    <div class="callout danger">
+      <strong>🔴 Source server ใช้ ESXi — VM ทุกตัวเป็น VMDK format</strong>
+      ไม่สามารถ Import เข้า Hyper-V ตรงๆ ได้ — ต้องผ่านขั้นตอน Discovery → Pre-migration → Convert → Verify ก่อนทุกครั้ง
+    </div>
+
+    <h3>ภาพรวม Migration Path</h3>
+    <table>
+      <thead>
+        <tr><th>VM</th><th>ต้นทาง (คาดการณ์)</th><th>Format</th><th>วิธี Migration</th><th>Downtime โดยประมาณ</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Panacea-DB</strong></td>
+          <td>ESXi VM (หรือ Bare Metal)</td>
+          <td>VMDK / Physical</td>
+          <td class="yes">SQL Backup + Restore (แนะนำ)</td>
+          <td>~4-8 ชม.</td>
+        </tr>
+        <tr>
+          <td><strong>Panacea-Repl+ELK</strong></td>
+          <td>ESXi VM</td>
+          <td>VMDK</td>
+          <td class="part">StarWind V2V: VMDK → VHDX</td>
+          <td>~2-4 ชม. + conversion time</td>
+        </tr>
+        <tr>
+          <td><strong>Panacea-App</strong></td>
+          <td>ESXi VM (หรือ Bare Metal)</td>
+          <td>VMDK / Physical</td>
+          <td class="part">StarWind V2V หรือ Disk2VHD</td>
+          <td>~2-4 ชม.</td>
+        </tr>
+        <tr>
+          <td><strong>Panacea-RPT-App</strong></td>
+          <td>ESXi VM (หรือ Bare Metal)</td>
+          <td>VMDK / Physical</td>
+          <td class="part">StarWind V2V หรือ Disk2VHD</td>
+          <td>~2-4 ชม.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- STEP 0: DISCOVERY -->
+    <h3>ขั้นตอนที่ 0 — Discovery (ต้องทำก่อนเริ่ม migration)</h3>
+    <div class="callout info">
+      <strong>💡 เข้าไปดูข้อมูลบน ESXi server เดิมก่อน เพื่อวางแผน migration ได้ถูกต้อง</strong>
+      เข้า ESXi Host Client: <code>https://[server-ip]/ui</code> หรือ vSphere Client ถ้ามี vCenter
+    </div>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">บันทึก ESXi version ที่ใช้งาน</div>
+        <div class="ci-detail">Host Client → Summary → Version — กระทบ compatibility ของ export tools</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">รายชื่อ VM ทั้งหมด พร้อม state (Running/Off) และขนาด disk</div>
+        <div class="ci-detail">Host Client → Virtual Machines — จดชื่อ, vCPU, RAM, Disk size ทุกตัว</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจว่า VM มี Snapshot อยู่ไหม</div>
+        <div class="ci-detail">Right-click VM → Snapshots — ถ้ามีต้อง consolidate ทิ้งก่อน มิฉะนั้น convert ไม่ได้สมบูรณ์</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-warn">สำคัญมาก</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจ VMDK format ของแต่ละ disk (Thin / Thick)</div>
+        <div class="ci-detail">Datastore Browser → คลิก VM folder → ดู .vmdk files — Thin ใช้เวลา convert นานกว่า Thick เล็กน้อย</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจ VM Hardware Version และ Guest OS</div>
+        <div class="ci-detail">VM Settings → VM Hardware Version — กระทบว่าต้อง upgrade Gen หรือไม่หลัง migrate</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">บันทึก IP Address และ Network config ของทุก VM</div>
+        <div class="ci-detail">เข้าหน้าจอ VM หรือดู vCenter — ต้องใช้ IP เดิมบน Hyper-V เพื่อไม่ต้องแก้ config ระบบ HIS</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-it">IT</span>
+      </div></li>
+    </ul>
+
+    <!-- STEP 1: PRE-MIGRATION -->
+    <h3>ขั้นตอนที่ 1 — Pre-Migration (ทำบน Source ESXi ทุกตัว)</h3>
+    <div class="callout warn">
+      <strong>⚠️ ต้องทำขั้นตอนเหล่านี้ก่อนทุกครั้ง — ถ้าข้ามจะเกิด BSOD หรือ boot loop ใน Hyper-V</strong>
+    </div>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Consolidate Snapshots ทุกตัวให้หมด</div>
+        <div class="ci-detail">Right-click VM → Snapshots → Consolidate — รอจนเสร็จสมบูรณ์ก่อนทำ step ต่อไป</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-warn">ห้ามข้าม</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Uninstall VMware Tools ออกจากทุก VM (ยกเว้น Panacea-DB ที่ใช้ SQL Backup)</div>
+        <div class="ci-detail">เข้า VM → Control Panel → Programs → Uninstall VMware Tools — ถ้าไม่ uninstall จะ conflict กับ Hyper-V Integration Services</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-warn">ห้ามข้าม</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจ Disk Partition Style — ต้องเป็น GPT (ไม่ใช่ MBR) สำหรับ Gen 2 VM</div>
+        <div class="ci-detail">เข้า VM → Disk Management → ดู Disk 0 Properties — ถ้าเป็น MBR ต้องแปลง: <code>mbr2gpt /convert /allowFullOS</code> แล้ว reboot</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-warn">สำคัญมาก</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Shutdown VM ก่อน convert ทุกครั้ง</div>
+        <div class="ci-detail">ห้าม convert VM ขณะกำลังทำงาน (ยกเว้น StarWind Live Migration mode) — VMDK ที่ open อยู่อาจได้ข้อมูลไม่สมบูรณ์</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ทำ Full SQL Backup ล่าสุดก่อนทุกอย่าง (สำหรับ Panacea-DB)</div>
+        <div class="ci-detail">เก็บไว้บน external storage — นี่คือ safety net ถ้า migration ล้มเหลว</div>
+        <span class="tag tag-dba">DBA</span><span class="tag tag-warn">สำคัญที่สุด</span>
+      </div></li>
+    </ul>
+
+    <!-- STEP 2: TOOL -->
+    <h3>ขั้นตอนที่ 2 — Tool สำหรับ Convert VMDK → VHDX</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">เครื่องมือแนะนำ</div><div class="cfg-v normal"><strong>StarWind V2V Converter</strong> — ฟรี, ไม่ต้อง install, รองรับ VMDK → VHDX โดยตรง</div></div>
+      <div class="cfg-row"><div class="cfg-k">ดาวน์โหลด</div><div class="cfg-v normal">starwindsoftware.com/starwind-v2v-converter (ฟรี, ต้องลงทะเบียน email)</div></div>
+      <div class="cfg-row"><div class="cfg-k">รองรับ format</div><div class="cfg-v normal">VMDK (ESXi) → VHDX (Hyper-V) ✓ | ทั้ง Thin และ Thick provisioned</div></div>
+      <div class="cfg-row"><div class="cfg-k">วิธีใช้</div><div class="cfg-v normal">GUI-based — เลือก source VMDK → เลือก output VHDX → เลือก Fixed size → Convert</div></div>
+      <div class="cfg-row"><div class="cfg-k">เวลา convert</div><div class="cfg-v normal">ขึ้นกับขนาด disk และความเร็ว storage ที่เก็บไว้ — ประมาณ ~1-2 GB/นาที</div></div>
+      <div class="cfg-row"><div class="cfg-k">ทางเลือก</div><div class="cfg-v normal">qemu-img (CLI, ฟรี): <code>qemu-img convert -f vmdk input.vmdk -O vhdx output.vhdx</code></div></div>
+    </div>
+
+    <!-- STEP 3: VM-BY-VM -->
+    <h3>ขั้นตอนที่ 3 — Migration แต่ละ VM</h3>
+
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+      <strong style="color:#991b1b;display:block;margin-bottom:8px;">🔴 Panacea-DB (Master SQL) — ใช้ SQL Backup/Restore เท่านั้น</strong>
+      <ul style="margin:0;padding-left:20px;font-size:13px;color:#7f1d1d;">
+        <li>ห้ามใช้ V2V convert สำหรับ SQL Server production — ได้ VMDK ที่ inconsistent ง่ายมาก</li>
+        <li>วิธีที่ถูกต้อง: สร้าง VM ใหม่บน Hyper-V → Install Windows + SQL Server → Restore database จาก backup</li>
+      </ul>
+    </div>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[DB] สร้าง VM ใหม่บน Hyper-V ตาม spec (8 vCPU, 240GB RAM, Gen 2)</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[DB] Install Windows Server 2025 + SQL Server 2022 Enterprise ใหม่</div>
+        <div class="ci-detail">Install fresh — ไม่ใช้ image จาก ESXi VM เดิม</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[DB] Copy SQL Backup file ไปยัง VM ใหม่ → Restore ทุก database</div>
+        <div class="ci-detail">Full backup + Differential + Log backup ล่าสุด — ตรวจสอบ consistency หลัง restore ด้วย <code>DBCC CHECKDB</code></div>
+        <span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[DB] Config SQL Server ตาม spec (max memory, MAXDOP, TempDB files, etc.)</div>
+        <span class="tag tag-dba">DBA</span>
+      </div></li>
+    </ul>
+
+    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:14px 16px;margin:14px 0;">
+      <strong style="color:#92400e;display:block;margin-bottom:8px;">⚠️ Panacea-Repl+ELK, App, RPT-App — ใช้ StarWind V2V</strong>
+      <p style="margin:0;font-size:13px;color:#78350f;">VM เหล่านี้ไม่ใช่ SQL production ดังนั้น V2V conversion ยอมรับได้ — แต่ยังต้องทำ Pre-migration steps ให้ครบก่อน</p>
+    </div>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] Copy VMDK files ออกจาก ESXi Datastore มาไว้บน Windows machine ที่ run StarWind</div>
+        <div class="ci-detail">ใช้ SCP / Datastore Browser / WinSCP เชื่อมต่อ ESXi โดยตรง — ต้องการ space เท่ากับขนาด disk</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] Run StarWind V2V Converter: VMDK → Fixed VHDX</div>
+        <div class="ci-detail">เลือก "Local file" → input .vmdk → output path บน D:/E:/F: ตาม VM → เลือก Fixed size (ไม่ใช้ Dynamic)</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] สร้าง VM ใหม่บน Hyper-V (Gen 2) แนบ VHDX ที่ convert แล้ว</div>
+        <div class="ci-detail">ตรวจสอบ Secure Boot setting — ถ้า VM เดิมไม่ได้ใช้ Secure Boot ให้ปิดก่อน boot ครั้งแรก</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] Boot VM ครั้งแรก — ตรวจสอบ Windows ขึ้นปกติ</div>
+        <div class="ci-detail">ถ้า BSOD: ตรวจ Stop Code — 0x7B (INACCESSIBLE_BOOT_DEVICE) = driver SCSI ไม่โหลด → ต้อง inject driver ก่อน convert</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-warn">เตรียมรับมือ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] Install Hyper-V Integration Services และ uninstall VMware remnants</div>
+        <div class="ci-detail">Device Manager — ตรวจว่าไม่มี VMware device เหลือค้างอยู่ · IS จะถูก install อัตโนมัติผ่าน Windows Update</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">[V2V] ตั้งค่า Static Memory และปิด Dynamic Memory ใน VM Settings</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+    </ul>
+
+    <!-- STEP 4: POST -->
+    <h3>ขั้นตอนที่ 4 — Post-Migration Verify (ทุก VM)</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจ IP Address ตรงกับของเดิม — ระบบ HIS ต้องเชื่อมต่อได้ทันที</div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตรวจ Hyper-V Integration Services status ใน Device Manager ทุก VM</div>
+        <div class="ci-detail">ต้องไม่มี Unknown Device หรือ ! warning บน Hyper-V device</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ทดสอบ Application ทุก VM ทำงานได้ปกติ</div>
+        <div class="ci-detail">SQL connects, HIS app loads, Replication sync, ELK receives logs, Report generates</div>
+        <span class="tag tag-it">IT</span><span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Monitor ระบบ 24-48 ชม. ก่อน cutover จริง</div>
+        <div class="ci-detail">ดู event log, SQL error log, และ performance counters ว่าไม่มีสิ่งผิดปกติ</div>
+        <span class="tag tag-dba">DBA</span><span class="tag tag-it">IT</span>
+      </div></li>
+    </ul>
+
+  </div>
+</div>
+
+<!-- ========== 9: MISSING ========== -->
+<div class="card s-missing" id="missing">
+  <div class="card-header"><div class="num">9</div> สิ่งที่ขาดใน BOM / ต้องเพิ่ม</div>
+  <div class="card-body">
+    <div class="callout danger">
+      <strong>🔴 รายการเหล่านี้ไม่อยู่ใน BOM ปัจจุบัน — ต้องจัดหาเพิ่ม</strong>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>รายการที่ขาด</th><th>จำเป็น?</th><th>ทางออก</th><th>ค่าใช้จ่าย</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Backup Solution</strong> — ไม่มี plan backup off-site</td>
+          <td class="yes">Critical</td>
+          <td>Windows Server Backup (ฟรี, basic) หรือ Veeam Community / NAKIVO</td>
+          <td>ฟรี–ปานกลาง</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>External Backup Storage</strong> — ต้องมี destination นอก server</td>
+          <td class="yes">Critical</td>
+          <td>NAS, tape, cloud (Azure Backup), หรือ offsite disk</td>
+          <td>ขึ้นอยู่กับ solution</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>UPS (Uninterruptible Power Supply)</strong></td>
+          <td class="yes">สูง</td>
+          <td>APC / Eaton — ต้องรับ load 1300W PSU ×2</td>
+          <td>~50K-150K THB</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>KVM / Console access</strong> นอกจาก iDRAC/XCC</td>
+          <td class="part">ปานกลาง</td>
+          <td>iDRAC (XCC) ที่มาพร้อม SR650 เพียงพอแล้ว — แต่ควร config ก่อน install</td>
+          <td>มีอยู่แล้ว</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>Windows Admin Center</strong></td>
+          <td class="part">แนะนำ</td>
+          <td>ดาวน์โหลดฟรีจาก Microsoft — ต้องมี machine สำหรับ WAC gateway</td>
+          <td>ฟรี</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>SQL Server Enterprise license สำหรับ Replica</strong> (ถ้า readable)</td>
+          <td class="part">ขึ้นกับ decision</td>
+          <td>ถ้า passive DR ไม่ต้อง | ถ้า readable ต้องซื้อ</td>
+          <td>~฿490K ถ้าต้องการ</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><strong>Network Switch 25GbE</strong> — ถ้า switch ปัจจุบันเป็น 1GbE</td>
+          <td class="part">ขึ้นกับ infra</td>
+          <td>ถ้า switch รองรับ 10/25GbE ผ่าน SFP+ ก็ใช้ได้ — ตรวจสอบก่อน</td>
+          <td>แล้วแต่รุ่น</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><strong>Anti-Virus สำหรับ Host + VMs</strong></td>
+          <td class="part">แนะนำ</td>
+          <td>Microsoft Defender (ฟรี, built-in WS2025) หรือ enterprise AV</td>
+          <td>ฟรี–มีค่าใช้จ่าย</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== 10: RISK ========== -->
+<div class="card s-risk" id="risk">
+  <div class="card-header"><div class="num">10</div> ความเสี่ยงและข้อควรระวัง (Hyper-V Specific)</div>
+  <div class="card-body">
+    <table>
+      <thead>
+        <tr><th>#</th><th>ความเสี่ยง</th><th>ระดับ</th><th>การป้องกัน</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><strong>Host Reboot จาก Windows Update = VM ทุกตัว down</strong><br>ต่างจาก ESXi ที่ update แยก</td>
+          <td><span class="dot dot-h"></span><span class="risk-high">High</span></td>
+          <td>ปิด Auto Update บน Host · วางแผน maintenance window ทุกครั้ง · แจ้ง clinical team ล่วงหน้า</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><strong>Dynamic Memory เปิดอยู่บน SQL VM</strong><br>ถ้าลืมปิด SQL buffer pool จะถูก balloon</td>
+          <td><span class="dot dot-h"></span><span class="risk-high">High</span></td>
+          <td>ตรวจสอบทุก VM ว่า Static Memory = ON และค่า Min = Max เสมอ</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><strong>Checkpoint บน SQL VM</strong><br>Checkpoint = SQL log chain break → restore ไม่ได้</td>
+          <td><span class="dot dot-h"></span><span class="risk-high">High</span></td>
+          <td>ปิด Checkpoint ใน VM settings สำหรับ SQL VM · ใช้ SQL Backup แทน</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><strong>NUMA Crossing</strong><br>ถ้า VM ได้ RAM/CPU ข้าม NUMA node → latency เพิ่ม</td>
+          <td><span class="dot dot-m"></span><span class="risk-med">Medium</span></td>
+          <td>ตั้งค่า NUMA topology ใน VM · Master DB ควร pin ไป Socket 0</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><strong>P2V SQL Server ด้วย Disk2VHD ขณะ SQL ทำงาน</strong><br>อาจได้ VHDX ที่ inconsistent</td>
+          <td><span class="dot dot-h"></span><span class="risk-high">High</span></td>
+          <td>หยุด SQL Service ก่อน Disk2VHD · หรือใช้ Backup+Restore แทน P2V</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><strong>Gen 1 vs Gen 2 VM Compatibility</strong><br>Disk2VHD จาก MBR disk → ต้องแปลงเป็น GPT ก่อน Gen 2</td>
+          <td><span class="dot dot-m"></span><span class="risk-med">Medium</span></td>
+          <td>ใช้ <code>mbr2gpt /convert /allowFullOS</code> บน bare metal ก่อน P2V</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><strong>Host OS เป็น attack surface ใหญ่กว่า ESXi</strong><br>Windows มีบริการมากกว่า ESXi kernel</td>
+          <td><span class="dot dot-m"></span><span class="risk-med">Medium</span></td>
+          <td>ใช้ Server Core · ปิด role ที่ไม่ใช้ · เปิด Windows Firewall · update สม่ำเสมอ</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><strong>VHDX Fixed ใช้เวลา create นาน</strong><br>VHDX ขนาด 5 TB = pre-allocate นาน</td>
+          <td><span class="dot dot-l"></span><span class="risk-low">Low</span></td>
+          <td>สร้าง VHDX ล่วงหน้าก่อนวัน migrate · บน ReFS เร็วกว่า NTFS มาก (Block Cloning)</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><strong>Integration Services ไม่ install</strong><br>VM จาก snapshot เก่าอาจมี IS version เก่า</td>
+          <td><span class="dot dot-l"></span><span class="risk-low">Low</span></td>
+          <td>ตรวจสอบ IS version ใน Device Manager ของทุก VM หลัง import</td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><strong>ไม่มี hot spare drive (เหมือน ESXi plan)</strong></td>
+          <td><span class="dot dot-m"></span><span class="risk-med">Medium</span></td>
+          <td>Lenovo Premier 24×7 4HR SLA ที่มีอยู่ใน BOM — ตรวจสอบ activation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== 11: TIPS ========== -->
+<div class="card s-tips" id="tips">
+  <div class="card-header"><div class="num">11</div> คำแนะนำเพิ่มเติม (Best Practices)</div>
+  <div class="card-body">
+
+    <h3>SQL Server บน Hyper-V — ตั้งค่าเพิ่มเติม</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ปิด Hyper-V Time Synchronization Integration Service บน SQL VM</div>
+        <div class="ci-detail">SQL Server จัดการ time เอง — ถ้า Hyper-V sync time อาจ conflict กัน<br>ปิดที่: VM Settings → Integration Services → ยกเลิก "Time synchronization"</div>
+        <span class="tag tag-dba">DBA</span><span class="tag tag-warn">สำคัญ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ใช้ SCSI Synthetic Adapter เท่านั้น (ไม่ใช้ IDE)</div>
+        <div class="ci-detail">Gen 2 VM บังคับ SCSI แล้ว — แต่ถ้า import VM เก่า Gen 1 ต้องตรวจสอบ</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งค่า SQL max server memory ให้เหลือ RAM สำหรับ Windows OS ใน VM</div>
+        <div class="ci-detail">VM มี 240 GB → SQL max memory = 216 GB (เผื่อ 24 GB สำหรับ Windows)</div>
+        <span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งค่า Disk Queue Length สำหรับ VHDX</div>
+        <div class="ci-detail">Storage QoS: ตั้งค่า MaximumIOPS เพื่อป้องกัน VM ใดใด้โมนอป Pool 3 (Shared)</div>
+        <span class="tag tag-eng">Engineer</span><span class="tag tag-new">แนะนำ</span>
+      </div></li>
+    </ul>
+
+    <h3>Hyper-V Host Best Practices</h3>
+    <ul class="cklist">
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ใช้ Windows Admin Center แทน Hyper-V Manager แบบเก่า</div>
+        <div class="ci-detail">WAC รองรับ browser-based management, VM monitoring, Performance counters ใน UI เดียว</div>
+        <span class="tag tag-it">IT</span><span class="tag tag-new">แนะนำ</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ตั้งค่า Hyper-V Host Automatic Stop Action เป็น "Save" หรือ "Shutdown"</div>
+        <div class="ci-detail">ถ้า Host ปิดตัวกะทันหัน — "Shutdown" ดีกว่าสำหรับ SQL (graceful)</div>
+        <span class="tag tag-eng">Engineer</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">Monitor Hyper-V Performance Counters สำคัญ</div>
+        <div class="ci-detail">
+          <code>Hyper-V Hypervisor Virtual Processor\% Total Run Time</code><br>
+          <code>Hyper-V Virtual Storage Device\Read Latency</code><br>
+          <code>Hyper-V Virtual Storage Device\Write Latency</code>
+        </div>
+        <span class="tag tag-it">IT</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">ทำ VM Export (Full backup ระดับ VM) อย่างน้อยสัปดาห์ละครั้ง</div>
+        <div class="ci-detail">Hyper-V Export = backup ระดับ VM ทั้งก้อน — เก็บไว้ external storage</div>
+        <span class="tag tag-it">IT</span><span class="tag tag-dba">DBA</span>
+      </div></li>
+      <li onclick="toggle(this)"><div class="cb"></div><div class="ci">
+        <div class="ci-title">เก็บ bare metal เดิมไว้เป็น DR อย่างน้อย 3-6 เดือน</div>
+        <div class="ci-detail">ถ้า server ใหม่มีปัญหา สามารถ fallback กลับได้ — เหมือน ESXi plan</div>
+        <span class="tag tag-it">IT</span><span class="tag tag-pm">PM</span>
+      </div></li>
+    </ul>
+
+    <h3>Backup Strategy สำหรับ Hyper-V</h3>
+    <table>
+      <thead><tr><th>ระดับ</th><th>เครื่องมือ</th><th>ความถี่</th><th>Destination</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>SQL Transaction Log</strong></td>
+          <td>SQL Server Agent</td>
+          <td>ทุก 15-30 นาที</td>
+          <td>VM local → copy ไป external</td>
+        </tr>
+        <tr>
+          <td><strong>SQL Full Backup</strong></td>
+          <td>SQL Server Agent</td>
+          <td>ทุกคืน</td>
+          <td>External storage / NAS</td>
+        </tr>
+        <tr>
+          <td><strong>VM Backup (Hyper-V)</strong></td>
+          <td>Veeam Community / NAKIVO / Windows Server Backup</td>
+          <td>ทุกวัน</td>
+          <td>External storage</td>
+        </tr>
+        <tr>
+          <td><strong>Host OS Backup</strong></td>
+          <td>Windows Server Backup</td>
+          <td>หลัง config เปลี่ยน</td>
+          <td>Network share</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>✅ สรุปคำแนะนำหลัก</strong>
+      <ul>
+        <li>ใช้ <strong>Server Core</strong> สำหรับ Hyper-V Host — ไม่ใช้ Desktop Experience</li>
+        <li>ใช้ <strong>Static Memory</strong> + ปิด Dynamic Memory บนทุก VM โดยเฉพาะ SQL</li>
+        <li>ใช้ <strong>Fixed VHDX บน ReFS</strong> — ไม่ใช้ Dynamic VHDX และไม่ใช้ NTFS</li>
+        <li>ปิด <strong>Checkpoint</strong> บน SQL VM — ใช้ SQL Backup เท่านั้น</li>
+        <li>ปิด <strong>Time Synchronization</strong> Integration Service บน SQL VM</li>
+        <li>ใช้ <strong>SQL Backup + Restore</strong> แทน Disk2VHD สำหรับ Panacea-DB</li>
+        <li>วางแผน <strong>Maintenance Window</strong> ให้ชัดเจนก่อน Host Update ทุกครั้ง</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  HAOS Migration — Hyper-V 4 VMs Guide | อ้างอิง BOM และ Design Options β-v2 | ต้องผ่าน review โดย DBA, IT Manager ก่อน implement
+</footer>
+
+<script>
+  function toggle(li) {
+    li.classList.toggle('done');
+    const cb = li.querySelector('.cb');
+    if (li.classList.contains('done')) { cb.textContent = '✓'; }
+    else { cb.textContent = ''; }
+  }
+</script>
+
+</body>
+</html>

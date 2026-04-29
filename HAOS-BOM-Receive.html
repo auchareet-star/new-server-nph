@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAOS — BOM ตรวจรับ Hardware</title>
+<style>
+  :root {
+    --c-bg: #f8fafc;
+    --c-card: #ffffff;
+    --c-border: #e2e8f0;
+    --c-text: #0f172a;
+    --c-muted: #64748b;
+    --c-ok: #16a34a;
+    --c-warn: #d97706;
+    --c-danger: #dc2626;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Sarabun", "Noto Sans Thai", "Segoe UI", sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 24px; }
+
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  header h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 700; }
+  header .sub { color: #93c5fd; font-size: 13px; }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .meta-card {
+    background: white;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .meta-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--c-muted);
+    margin-bottom: 4px;
+  }
+
+  .meta-card .field {
+    border: none;
+    border-bottom: 1px dashed #94a3b8;
+    width: 100%;
+    font-size: 14px;
+    color: var(--c-text);
+    background: transparent;
+    padding: 2px 0;
+    outline: none;
+    font-family: inherit;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    background: white;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .progress-label { font-size: 13px; color: var(--c-muted); white-space: nowrap; }
+  .progress-bar-bg { flex: 1; background: #e2e8f0; border-radius: 99px; height: 10px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: #10b981; border-radius: 99px; transition: width 0.3s; width: 0%; }
+  .progress-count { font-size: 14px; font-weight: 700; color: #065f46; white-space: nowrap; min-width: 80px; text-align: right; }
+
+  /* BOM Table */
+  .bom-wrap {
+    background: white;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .bom-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .bom-wrap thead tr {
+    background: #1e3a5f;
+    color: white;
+  }
+
+  .bom-wrap th {
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    text-align: left;
+  }
+
+  .bom-wrap th.center { text-align: center; }
+
+  .bom-wrap tbody tr {
+    border-bottom: 1px solid var(--c-border);
+    transition: background 0.1s;
+  }
+
+  .bom-wrap tbody tr:last-child { border-bottom: none; }
+  .bom-wrap tbody tr:hover { background: #f8fafc; }
+  .bom-wrap tbody tr.done { background: #f0fdf4; }
+  .bom-wrap tbody tr.issue { background: #fef2f2; }
+
+  .bom-wrap td {
+    padding: 10px 12px;
+    vertical-align: middle;
+  }
+
+  .bom-wrap td.center { text-align: center; }
+
+  .item-no {
+    font-weight: 700;
+    color: var(--c-muted);
+    font-size: 12px;
+    width: 36px;
+  }
+
+  .item-desc { font-weight: 600; line-height: 1.4; }
+  .item-sub  { font-size: 11px; color: var(--c-muted); margin-top: 2px; font-weight: 400; }
+
+  .qty-ordered {
+    font-weight: 700;
+    text-align: center;
+    width: 60px;
+  }
+
+  .qty-received {
+    width: 70px;
+    text-align: center;
+  }
+
+  .qty-received input {
+    width: 52px;
+    text-align: center;
+    border: 1px solid #94a3b8;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .qty-received input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px #bfdbfe; }
+  .qty-received input.match { border-color: #10b981; background: #f0fdf4; color: #065f46; }
+  .qty-received input.over  { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+  .qty-received input.short { border-color: #dc2626; background: #fef2f2; color: #991b1b; }
+
+  .sn-cell {
+    min-width: 200px;
+  }
+
+  .sn-cell input {
+    border: none;
+    border-bottom: 1px dashed #94a3b8;
+    font-size: 12px;
+    width: 100%;
+    padding: 2px 4px;
+    background: transparent;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    outline: none;
+    color: var(--c-text);
+  }
+
+  .sn-cell input:focus { border-bottom-color: #3b82f6; }
+
+  .sn-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .status-cell {
+    width: 80px;
+    text-align: center;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .status-ok      { background: #dcfce7; color: #166534; }
+  .status-pending { background: #f1f5f9; color: #64748b; }
+  .status-issue   { background: #fee2e2; color: #991b1b; }
+
+  .remark-cell input {
+    border: none;
+    border-bottom: 1px dashed #94a3b8;
+    font-size: 12px;
+    width: 100%;
+    min-width: 120px;
+    padding: 2px 4px;
+    background: transparent;
+    font-family: inherit;
+    outline: none;
+    color: #dc2626;
+  }
+
+  .remark-cell input:focus { border-bottom-color: #dc2626; }
+
+  /* Callout */
+  .callout {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .callout.danger  { background: #fef2f2; border-left-color: #dc2626; }
+  .callout.warn    { background: #fffbeb; border-left-color: #f59e0b; }
+  .callout.success { background: #f0fdf4; border-left-color: #10b981; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* Sign-off */
+  .signoff {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .sign-box {
+    background: white;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .sign-box .sign-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--c-muted); margin-bottom: 40px; }
+  .sign-box .sign-line { border-top: 1px solid var(--c-text); padding-top: 6px; font-size: 12px; color: var(--c-muted); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #0369a1; color: white; }
+  .btn-success { background: #065f46; color: white; }
+  .btn-outline { background: white; color: var(--c-text); border: 1px solid var(--c-border); }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--c-muted);
+    padding: 20px;
+    border-top: 1px solid var(--c-border);
+    margin-top: 8px;
+  }
+
+  @media print {
+    body { background: white; font-size: 12px; }
+    .btn-row, .progress-wrap { display: none; }
+    header { background: none; color: black; border-bottom: 2px solid black; padding: 12px 0; }
+    header h1 { font-size: 18px; }
+    header .sub { color: #333; }
+    .container { padding: 0; }
+    .meta-card .field { border-bottom: 1px solid black; }
+    .bom-wrap { border: 1px solid #333; }
+    .bom-wrap thead tr { background: #333; }
+    .qty-received input { border: 1px solid #333; }
+    .sn-cell input { border-bottom: 1px solid #333; }
+    .remark-cell input { border-bottom: 1px solid #333; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>HAOS Migration — BOM ตรวจรับ Hardware</h1>
+    <div class="sub">Lenovo ThinkSystem SR650 V4 | โรงพยาบาลนพรัตนราชธานี (NPH)</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="meta-grid">
+    <div class="meta-card">
+      <div class="label">วันที่รับของ</div>
+      <input class="field" type="text" placeholder="DD/MM/YYYY">
+    </div>
+    <div class="meta-card">
+      <div class="label">เลข PO / Invoice</div>
+      <input class="field" type="text" placeholder="PO-XXXX / INV-XXXX">
+    </div>
+    <div class="meta-card">
+      <div class="label">ผู้ตรวจรับ (IT)</div>
+      <input class="field" type="text" placeholder="ชื่อ-นามสกุล">
+    </div>
+    <div class="meta-card">
+      <div class="label">ผู้ส่งมอบ (Vendor/Lenovo)</div>
+      <input class="field" type="text" placeholder="ชื่อ-นามสกุล / บริษัท">
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <span class="progress-label">รายการที่ตรวจครบแล้ว</span>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <span class="progress-count" id="progressCount">0 / 11</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="fillAllQty()">กรอกจำนวนตามสั่งทุกรายการ</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ พิมพ์เอกสาร</button>
+  </div>
+
+  <div class="callout danger">
+    <strong>🔴 ก่อนลงชื่อรับ — ตรวจสอบทุกข้อให้ครบ</strong>
+    จำนวนต้องตรงตาม BOM · Serial Number ทุกชิ้น · ไม่มีรอยบุบ/แตก/ชำรุด · Firmware label ตรงรุ่น · กล่อง Lenovo seal ไม่ถูกเปิด
+  </div>
+
+  <div class="bom-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="center">#</th>
+          <th>รายการ</th>
+          <th class="center">สั่ง</th>
+          <th class="center">รับจริง</th>
+          <th>Serial Number / Asset Tag</th>
+          <th class="center">สถานะ</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody id="bomBody">
+
+        <!-- Row 1 -->
+        <tr data-ordered="1" data-id="1">
+          <td class="item-no center">1</td>
+          <td><div class="item-desc">ThinkSystem SR650 V4</div><div class="item-sub">3yr Base Warranty included</div></td>
+          <td class="qty-ordered center">1</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell"><div class="sn-list"><input type="text" placeholder="S/N ตัวเครื่อง"></div></td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 2 -->
+        <tr data-ordered="2" data-id="2">
+          <td class="item-no center">2</td>
+          <td><div class="item-desc">Intel Xeon 6517P 16C 190W 3.2GHz Processor</div><div class="item-sub">CPU ×2 (dual socket)</div></td>
+          <td class="qty-ordered center">2</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N CPU #1">
+              <input type="text" placeholder="S/N CPU #2">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 3 -->
+        <tr data-ordered="8" data-id="3">
+          <td class="item-no center">3</td>
+          <td><div class="item-desc">64 GB TruDDR5 6400MHz (2Rx4) RDIMM</div><div class="item-sub">RAM ×8 (รวม 512 GB)</div></td>
+          <td class="qty-ordered center">8</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N DIMM #1">
+              <input type="text" placeholder="S/N DIMM #2">
+              <input type="text" placeholder="S/N DIMM #3">
+              <input type="text" placeholder="S/N DIMM #4">
+              <input type="text" placeholder="S/N DIMM #5-8 (กรอกต่อ)">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 4 -->
+        <tr data-ordered="1" data-id="4">
+          <td class="item-no center">4</td>
+          <td><div class="item-desc">RAID 940-16i 4GB Flash PCIe Gen4 12Gb Adapter</div><div class="item-sub">RAID Controller</div></td>
+          <td class="qty-ordered center">1</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell"><div class="sn-list"><input type="text" placeholder="S/N RAID Controller"></div></td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 5 -->
+        <tr data-ordered="8" data-id="5">
+          <td class="item-no center">5</td>
+          <td><div class="item-desc">2.5" U.3 7500 MAX 3.2TB Mixed Use NVMe PCIe 4.0 x4 HS SSD</div><div class="item-sub">NVMe ×8 — ใช้เป็น Data Pool 1, 2, 3</div></td>
+          <td class="qty-ordered center">8</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N NVMe #1 (Pool1)">
+              <input type="text" placeholder="S/N NVMe #2 (Pool1)">
+              <input type="text" placeholder="S/N NVMe #3 (Pool1)">
+              <input type="text" placeholder="S/N NVMe #4 (Pool1)">
+              <input type="text" placeholder="S/N NVMe #5 (Pool2)">
+              <input type="text" placeholder="S/N NVMe #6 (Pool2)">
+              <input type="text" placeholder="S/N NVMe #7 (Pool3)">
+              <input type="text" placeholder="S/N NVMe #8 (Pool3)">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 6 -->
+        <tr data-ordered="2" data-id="6">
+          <td class="item-no center">6</td>
+          <td><div class="item-desc">2.5" VA 960GB Read Intensive SATA 6Gb HS SSD v2</div><div class="item-sub">SATA SSD ×2 — ใช้เป็น Boot RAID 1</div></td>
+          <td class="qty-ordered center">2</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N SATA #1">
+              <input type="text" placeholder="S/N SATA #2">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 7 -->
+        <tr data-ordered="1" data-id="7">
+          <td class="item-no center">7</td>
+          <td><div class="item-desc">Broadcom 57414 10/25GbE SFP28-2-Port OCP Ethernet Adapter</div><div class="item-sub">Network Card (OCP slot)</div></td>
+          <td class="qty-ordered center">1</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell"><div class="sn-list"><input type="text" placeholder="S/N Network Card"></div></td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 8 -->
+        <tr data-ordered="2" data-id="8">
+          <td class="item-no center">8</td>
+          <td><div class="item-desc">SFP+ SR Transceiver</div><div class="item-sub">สำหรับ 25GbE uplink ×2</div></td>
+          <td class="qty-ordered center">2</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N Transceiver #1">
+              <input type="text" placeholder="S/N Transceiver #2">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 9 -->
+        <tr data-ordered="2" data-id="9">
+          <td class="item-no center">9</td>
+          <td><div class="item-desc">1300W 230V/115V Platinum CRPS Hot-Swap Power Supply v2.4</div><div class="item-sub">PSU ×2 (redundant)</div></td>
+          <td class="qty-ordered center">2</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="S/N PSU #1">
+              <input type="text" placeholder="S/N PSU #2">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 10 -->
+        <tr data-ordered="1" data-id="10">
+          <td class="item-no center">10</td>
+          <td><div class="item-desc">SERVER PREMIER 24×7 4HR RESP</div><div class="item-sub">Lenovo Premier Support — ต้อง activate ก่อน install</div></td>
+          <td class="qty-ordered center">1</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell"><div class="sn-list"><input type="text" placeholder="Contract ID / Entitlement Key"></div></td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+        <!-- Row 11 -->
+        <tr data-ordered="2" data-id="11">
+          <td class="item-no center">11</td>
+          <td><div class="item-desc">Windows Server 2025 Standard (16core)</div><div class="item-sub">License ×2 — คลุม 32 cores + สิทธิ์ 4 Windows VM</div></td>
+          <td class="qty-ordered center">2</td>
+          <td class="qty-received"><input type="number" min="0" value="" placeholder="0" onchange="checkQty(this)" oninput="updateStatus(this.closest('tr'))"></td>
+          <td class="sn-cell">
+            <div class="sn-list">
+              <input type="text" placeholder="Product Key #1">
+              <input type="text" placeholder="Product Key #2">
+            </div>
+          </td>
+          <td class="status-cell"><span class="status-badge status-pending">รอตรวจ</span></td>
+          <td class="remark-cell"><input type="text" placeholder="—"></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>⚠️ สิ่งที่ต้องตรวจนอกเหนือจาก BOM</strong>
+    <ul style="margin:4px 0; padding-left:20px;">
+      <li>ขอ cabling diagram จาก Lenovo — ยืนยัน Backplane type เป็น AnyBay (NVMe #1-8 ต่อผ่าน 940-16i)</li>
+      <li>Config ID / DCSC sheet — เอกสารยืนยัน factory configuration</li>
+      <li>ใบ Delivery Order (DO) จาก Vendor ลงนามครบถ้วน</li>
+      <li>ประกันตัวเครื่อง SR650 V4 — ยืนยัน 3yr Base Warranty เปิดใช้งานแล้ว</li>
+    </ul>
+  </div>
+
+  <div class="signoff">
+    <div class="sign-box">
+      <div class="sign-title">ผู้ตรวจรับ (IT / Engineer)</div>
+      <div class="sign-line">ชื่อ: ___________________<br>วันที่: ________________</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-title">IT Manager</div>
+      <div class="sign-line">ชื่อ: ___________________<br>วันที่: ________________</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-title">ผู้ส่งมอบ (Vendor)</div>
+      <div class="sign-line">ชื่อ: ___________________<br>วันที่: ________________</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  HAOS Migration — BOM ตรวจรับ Hardware | อ้างอิง Option β-v2 Install Checklist
+</footer>
+
+<script>
+  function checkQty(input) {
+    const row = input.closest('tr');
+    const ordered = parseInt(row.dataset.ordered);
+    const received = parseInt(input.value) || 0;
+    input.classList.remove('match', 'over', 'short');
+    if (input.value === '') return;
+    if (received === ordered) input.classList.add('match');
+    else if (received > ordered) input.classList.add('over');
+    else input.classList.add('short');
+    updateStatus(row);
+    updateProgress();
+  }
+
+  function updateStatus(row) {
+    const input = row.querySelector('.qty-received input');
+    const badge = row.querySelector('.status-badge');
+    const ordered = parseInt(row.dataset.ordered);
+    const received = parseInt(input.value);
+
+    if (input.value === '' || isNaN(received)) {
+      badge.className = 'status-badge status-pending';
+      badge.textContent = 'รอตรวจ';
+      row.classList.remove('done', 'issue');
+    } else if (received === ordered) {
+      badge.className = 'status-badge status-ok';
+      badge.textContent = '✓ OK';
+      row.classList.add('done');
+      row.classList.remove('issue');
+    } else {
+      badge.className = 'status-badge status-issue';
+      badge.textContent = received > ordered ? '⚠ เกิน' : '✗ ขาด';
+      row.classList.add('issue');
+      row.classList.remove('done');
+    }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const rows = document.querySelectorAll('#bomBody tr');
+    let done = 0;
+    rows.forEach(r => {
+      const input = r.querySelector('.qty-received input');
+      const ordered = parseInt(r.dataset.ordered);
+      const received = parseInt(input.value);
+      if (!isNaN(received) && received === ordered) done++;
+    });
+    const total = rows.length;
+    const pct = Math.round(done / total * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressCount').textContent = done + ' / ' + total + ' (' + pct + '%)';
+  }
+
+  function fillAllQty() {
+    document.querySelectorAll('#bomBody tr').forEach(row => {
+      const input = row.querySelector('.qty-received input');
+      const ordered = row.dataset.ordered;
+      input.value = ordered;
+      checkQty(input);
+    });
+  }
+</script>
+
+</body>
+</html>

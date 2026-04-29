@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAOS — Outsource Requirement & Constraint</title>
+<style>
+  :root {
+    --blue: #1565c0;
+    --blue-dark: #0d47a1;
+    --blue-bg: #e3f2fd;
+    --green: #2e7d32;
+    --green-bg: #f1f8e9;
+    --red: #c62828;
+    --red-bg: #ffebee;
+    --orange: #e65100;
+    --orange-bg: #fff3e0;
+    --purple: #6a1b9a;
+    --purple-bg: #f3e5f5;
+    --text: #1a1a2e;
+    --muted: #546e7a;
+    --border: #cfd8dc;
+    --bg: #f5f7f8;
+    --card: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Sarabun", "Noto Sans Thai", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0; padding: 0;
+    line-height: 1.75;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2a4a 50%, #1565c0 100%);
+    color: white;
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 4px 16px; border-radius: 20px;
+    font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 18px; color: #90caf9;
+  }
+
+  .hero h1 { font-size: 28px; font-weight: 800; margin: 0 0 10px; line-height: 1.25; }
+  .hero .sub { color: #90caf9; font-size: 14px; max-width: 580px; margin: 0 auto 28px; }
+
+  .hero-meta {
+    display: flex; justify-content: center; gap: 24px;
+    flex-wrap: wrap; font-size: 12px; color: #64b5f6;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* LAYOUT */
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  /* SECTION */
+  .section { margin-bottom: 28px; }
+
+  .sec-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .sec-badge {
+    display: inline-block; padding: 4px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .sb-blue   { background: var(--blue-bg);   color: var(--blue); }
+  .sb-green  { background: var(--green-bg);  color: var(--green); }
+  .sb-red    { background: var(--red-bg);    color: var(--red); }
+  .sb-orange { background: var(--orange-bg); color: var(--orange); }
+  .sb-purple { background: var(--purple-bg); color: var(--purple); }
+
+  .sec-head h2 { font-size: 17px; font-weight: 800; margin: 0; }
+  .sec-head p  { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+  /* CARD */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; margin-bottom: 14px;
+  }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #f1f5f9; padding: 9px 14px;
+    border-bottom: 2px solid var(--border); text-align: left;
+    font-weight: 700; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted);
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid #ecf0f1; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .item-title { font-weight: 700; color: var(--text); }
+  .item-sub   { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* SCOPE GRID */
+  .scope-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+
+  .scope-col { padding: 20px 24px; }
+  .scope-col.in  { border-right: 1px solid var(--border); }
+
+  .scope-col .col-label {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 2px solid;
+  }
+  .scope-col.in  .col-label { color: var(--green);  border-color: var(--green); }
+  .scope-col.out .col-label { color: var(--red);    border-color: var(--red); }
+
+  .scope-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 13px; margin-bottom: 10px; line-height: 1.5;
+  }
+  .scope-item .si-icon { flex-shrink: 0; margin-top: 1px; }
+
+  /* CONSTRAINT GRID */
+  .con-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
+
+  .con-item {
+    border: 1px solid #ffcdd2; border-radius: 9px;
+    padding: 14px 16px; background: #fff8f8;
+  }
+  .con-item .con-rule {
+    font-size: 13px; font-weight: 800; color: #b71c1c;
+    margin-bottom: 4px; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .con-item .con-why { font-size: 12px; color: #e57373; line-height: 1.5; }
+
+  /* DELIVERABLE GRID */
+  .del-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px; }
+
+  .del-item {
+    border: 1px solid #c8e6c9; border-radius: 9px;
+    padding: 14px 16px; background: #f9fef9;
+  }
+  .del-item .del-num {
+    font-size: 22px; font-weight: 900; color: #66bb6a; margin-bottom: 4px;
+  }
+  .del-item .del-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  .del-item .del-crit  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* RACI TABLE */
+  .raci-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .raci-table th {
+    padding: 9px 12px; background: #f1f5f9;
+    border-bottom: 2px solid var(--border); text-align: center;
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+  }
+  .raci-table th:first-child { text-align: left; }
+  .raci-table td { padding: 10px 12px; border-bottom: 1px solid #ecf0f1; text-align: center; }
+  .raci-table td:first-child { text-align: left; font-weight: 600; }
+  .raci-table tr:last-child td { border-bottom: none; }
+  .raci-table tr:hover td { background: #f8fafc; }
+
+  .r-R { background: #fce4ec; color: #c62828; font-weight: 800; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+  .r-A { background: #e8eaf6; color: #3949ab; font-weight: 800; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+  .r-C { background: #fff3e0; color: #e65100; font-weight: 800; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+  .r-I { background: #f3f4f6; color: #6b7280; font-weight: 800; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+  .r-dash { color: #d1d5db; font-size: 16px; }
+
+  /* CALLOUT */
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 18px; border-radius: 10px;
+    font-size: 13px; border-left: 4px solid; margin: 14px 0;
+  }
+  .callout .ico { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout .body strong { display: block; font-size: 14px; margin-bottom: 3px; }
+  .callout.warn   { background: var(--orange-bg); border-left-color: #f57c00; }
+  .callout.danger { background: var(--red-bg);    border-left-color: var(--red); }
+  .callout.ok     { background: var(--green-bg);  border-left-color: var(--green); }
+  .callout.info   { background: var(--blue-bg);   border-left-color: var(--blue); }
+
+  /* TECH SPEC */
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .spec-group { padding: 20px 24px; }
+  .spec-group:first-child { border-right: 1px solid var(--border); }
+  .spec-group .sg-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--blue); margin-bottom: 12px;
+  }
+  .spec-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px;
+    gap: 12px;
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row .sk { color: var(--muted); flex-shrink: 0; }
+  .spec-row .sv { font-weight: 700; color: var(--text); text-align: right; }
+  .spec-row .sv.must { color: var(--red); }
+  .spec-row .sv.ok   { color: var(--green); }
+
+  /* SIGN-OFF BOX */
+  .signoff-box {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1565c0 100%);
+    color: white; border-radius: 14px; padding: 32px; margin-top: 8px;
+  }
+  .signoff-box h2 { font-size: 20px; font-weight: 800; margin: 0 0 8px; }
+  .signoff-box .so-sub { color: #90caf9; font-size: 13px; margin-bottom: 24px; }
+
+  .signoff-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .so-item {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 16px;
+  }
+  .so-item .so-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #90caf9; margin-bottom: 6px; }
+  .so-item .so-name { font-size: 14px; font-weight: 700; color: white; margin-bottom: 12px; }
+  .so-item .so-line { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; font-size: 12px; color: #64b5f6; }
+
+  footer {
+    text-align: center; font-size: 12px; color: var(--muted);
+    padding: 24px; border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 680px) {
+    .scope-grid { grid-template-columns: 1fr; }
+    .scope-col.in { border-right: none; border-bottom: 1px solid var(--border); }
+    .con-grid  { grid-template-columns: 1fr; }
+    .del-grid  { grid-template-columns: 1fr 1fr; }
+    .spec-grid { grid-template-columns: 1fr; }
+    .spec-group:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    .signoff-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">HAOS Migration — Vendor Document</div>
+  <h1>Outsource Requirement<br>&amp; Constraint</h1>
+  <p class="sub">เอกสาร Requirement และ Constraint สำหรับส่งให้ Outsource ก่อนเริ่มงาน — ต้อง acknowledge และ sign-off ทุกข้อก่อน Go-live</p>
+  <div class="hero-meta">
+    <span>📋 Project: HAOS Server Migration</span>
+    <span>🖥️ Platform: VMware ESXi (version รอ Outsource ยืนยัน)</span>
+    <span>🖧 Hardware: Lenovo SR650 V4</span>
+    <span>📅 Version: 1.0 — 2026</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- 1. SCOPE OF WORK -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-badge sb-blue">Section 1</span>
+    <div>
+      <h2>Scope of Work</h2>
+      <p>สิ่งที่ Outsource ต้องทำ และสิ่งที่ไม่ใช่ความรับผิดชอบของ Outsource</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="scope-grid">
+      <div class="scope-col in">
+        <div class="col-label">✅ In Scope — Outsource รับผิดชอบ</div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>ตรวจสอบ Compatibility ของ Hardware SR650 V4 และแนะนำ ESXi version ที่รองรับ — พร้อม Compatibility Report</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>ยืนยัน License vSphere 7 Enterprise Plus ใช้กับ ESXi version ที่แนะนำได้ และครอบคลุม 2 CPU Socket</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>ติดตั้ง VMware ESXi (version ที่ยืนยันแล้ว) บน SR650 V4</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>Apply License และยืนยันว่า Licensed ถูกต้อง</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>ติดตั้งและ Configure vCenter (ถ้าจำเป็นสำหรับ feature Enterprise)</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>ตั้งค่า vSwitch / VLAN ร่วมกับ Hospital IT</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>สร้าง Datastore แยก NVMe (DB) และ SATA (APP) ตาม RAID Spec ใน Design Options</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>Restore VM ทั้ง 4 ตัวจาก ESXi เดิม — วาง Disk แต่ละ VM ให้ตรง Datastore ตาม Design</span></div>
+        <div class="scope-item"><span class="si-icon">🔵</span><span>Sign-off ว่าระบบ Production-ready ก่อน Hand-off</span></div>
+      </div>
+      <div class="scope-col out">
+        <div class="col-label">🚫 Out of Scope — Outsource ไม่รับผิดชอบ</div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>ติดตั้งหรือ Configure Application (HIS, HAOS)</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>Migration หรือ Restore SQL Database</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>Performance Tuning ระดับ Database</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>การ Config Network ภายใน Hospital (VLAN Policy, Firewall Rule)</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>Downtime Procedure และการแจ้ง Clinical Staff</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>UAT และ User Acceptance</span></div>
+        <div class="scope-item"><span class="si-icon">🔴</span><span>งาน Support หลัง Go-live (ยกเว้นระบุใน SLA แยก)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. TECHNICAL REQUIREMENT -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-badge sb-blue">Section 2</span>
+    <div>
+      <h2>Technical Requirement</h2>
+      <p>ข้อกำหนดทางเทคนิคที่ต้องปฏิบัติตาม — ทุกข้อเป็น Mandatory</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="spec-grid">
+      <div class="spec-group">
+        <div class="sg-title">🖥️ ESXi & Virtualization</div>
+        <div class="spec-row"><span class="sk">ESXi Version</span><span class="sv must">Outsource ต้องยืนยันและแนะนำ</span></div>
+        <div class="spec-row"><span class="sk">Compatibility Report</span><span class="sv must">ต้องส่งก่อนเริ่มติดตั้ง</span></div>
+        <div class="spec-row"><span class="sk">vCenter</span><span class="sv">ต้องชัดว่าใช้หรือไม่ก่อนเริ่ม</span></div>
+        <div class="spec-row"><span class="sk">VM Oversubscription</span><span class="sv must">ห้าม over-commit หนัก</span></div>
+        <div class="spec-row"><span class="sk">CPU Reserve (DB VM)</span><span class="sv">ต้อง Reserve จริง</span></div>
+        <div class="spec-row"><span class="sk">RAM Reserve (DB VM)</span><span class="sv">ต้อง Reserve จริง</span></div>
+      </div>
+      <div class="spec-group">
+        <div class="sg-title">💾 Storage & License</div>
+        <div class="spec-row"><span class="sk">NVMe Datastore</span><span class="sv must">DB VM เท่านั้น — RAID ตาม Design Options</span></div>
+        <div class="spec-row"><span class="sk">SATA Datastore</span><span class="sv ok">APP + Supporting VM — RAID ตาม Design Options</span></div>
+        <div class="spec-row"><span class="sk">License Type</span><span class="sv">vSphere 7 Enterprise Plus</span></div>
+        <div class="spec-row"><span class="sk">License Coverage</span><span class="sv must">ต้องครบ 2 CPU Socket</span></div>
+        <div class="spec-row"><span class="sk">Hardware</span><span class="sv">Lenovo ThinkSystem SR650 V4</span></div>
+        <div class="spec-row"><span class="sk">Compatibility Report</span><span class="sv must">ต้องส่งก่อนเริ่มงาน</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <strong>License vSphere 7 Enterprise Plus ที่มีอยู่ — ต้องตรวจสอบก่อน</strong>
+      License ปัจจุบันเป็น vSphere 7 Enterprise Plus (Never expiry) — Outsource ต้องยืนยันว่า License Key นี้ใช้กับ ESXi version ที่แนะนำได้ หรือต้องขอ Key ใหม่จาก VMware ก่อนติดตั้ง
+    </div>
+  </div>
+</div>
+
+<!-- 3. CONSTRAINT -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-badge sb-red">Section 3</span>
+    <div>
+      <h2>Constraint — ข้อห้ามที่ต้อง Sign-off</h2>
+      <p>ข้อกำหนดที่ไม่มีข้อยกเว้น — ละเมิดข้อใดข้อหนึ่งถือว่างานไม่ผ่าน Acceptance</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="con-grid">
+      <div class="con-item">
+        <div class="con-rule"><span>📋</span> ESXi version ต้องผ่าน Compatibility Report ก่อนติดตั้ง</div>
+        <div class="con-why">ห้ามติดตั้ง ESXi โดยไม่มีรายงานยืนยัน — Outsource ต้องส่ง Compatibility Report พร้อม version ที่แนะนำก่อนเริ่มงาน</div>
+      </div>
+      <div class="con-item">
+        <div class="con-rule"><span>🚫</span> License ต้องครอบคลุม 2 CPU Socket</div>
+        <div class="con-why">SR650 V4 มี 2 physical CPU socket — License ที่ครอบคลุมแค่ 1 socket ทำให้ผิด license term และ feature ทำงานไม่ครบ</div>
+      </div>
+      <div class="con-item">
+        <div class="con-rule"><span>🚫</span> NVMe Datastore ใช้ได้กับ DB VM เท่านั้น</div>
+        <div class="con-why">การวาง VM อื่นบน NVMe จะทำให้ DB VM แย่ง IOPS กับ Workload อื่น ซึ่งเป็นสาเหตุหลักของปัญหา I/O contention เดิม</div>
+      </div>
+      <div class="con-item">
+        <div class="con-rule"><span>🚫</span> ห้าม Oversubscribe CPU/RAM หนัก</div>
+        <div class="con-why">DB VM ต้องการ Resource ที่ Predictable — ถ้า over-commit จะทำให้ Query latency สูงและไม่ต่างจากปัญหาเดิม</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout danger">
+    <div class="ico">🚨</div>
+    <div class="body">
+      <strong>Constraint เหล่านี้ต้องระบุใน Scope of Work ที่เซ็น</strong>
+      Outsource ต้อง acknowledge ทุก Constraint ก่อนเริ่มงาน — ถ้าพบว่าละเมิด Constraint ใดหลัง Delivery ถือว่าต้องแก้ไขภายใน Warranty โดยไม่มีค่าใช้จ่ายเพิ่ม
+    </div>
+  </div>
+</div>
+
+<!-- 4. DELIVERABLES & ACCEPTANCE -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-badge sb-green">Section 4</span>
+    <div>
+      <h2>Deliverables &amp; Acceptance Criteria</h2>
+      <p>สิ่งที่ Outsource ต้องส่งมอบ และเกณฑ์ที่ถือว่าผ่าน</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="del-grid">
+      <div class="del-item">
+        <div class="del-num">D1</div>
+        <div class="del-title">Compatibility Report</div>
+        <div class="del-crit">เอกสารยืนยัน SR650 V4 + ESXi version ที่แนะนำ — ต้องส่งก่อนเริ่มติดตั้ง</div>
+      </div>
+      <div class="del-item">
+        <div class="del-num">D2</div>
+        <div class="del-title">License Verification</div>
+        <div class="del-crit">ยืนยัน vSphere License ครอบคลุม 2 socket และใช้กับ ESXi version ที่แนะนำได้ — มีเอกสารประกอบ</div>
+      </div>
+      <div class="del-item">
+        <div class="del-num">D3</div>
+        <div class="del-title">ESXi Host Ready</div>
+        <div class="del-crit">ESXi (version ที่ยืนยันแล้ว) ติดตั้งแล้ว, License apply แล้ว, เข้าถึง UI ได้ — ส่ง Screenshot ยืนยัน</div>
+      </div>
+      <div class="del-item">
+        <div class="del-num">D4</div>
+        <div class="del-title">Datastore Ready</div>
+        <div class="del-crit">NVMe Datastore (DB) และ SATA Datastore (APP) สร้างแล้ว แยกกันชัดเจน</div>
+      </div>
+      <div class="del-item">
+        <div class="del-num">D5</div>
+        <div class="del-title">VM Created</div>
+        <div class="del-crit">VM DB, APP และ Supporting VM สร้างแล้ว ตรง Spec — CPU/RAM Reserve ตามที่กำหนด</div>
+      </div>
+      <div class="del-item">
+        <div class="del-num">D6</div>
+        <div class="del-title">Production Sign-off</div>
+        <div class="del-crit">เอกสาร Sign-off จาก Outsource ว่าระบบ Infrastructure พร้อม Hand-off ให้ทีม Vendor ติดตั้ง Application ต่อ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. RESPONSIBILITY MATRIX -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-badge sb-purple">Section 5</span>
+    <div>
+      <h2>Responsibility Matrix</h2>
+      <p>R = Responsible · A = Accountable · C = Consulted · I = Informed</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="raci-table">
+      <thead>
+        <tr>
+          <th style="width:36%">งาน</th>
+          <th style="width:16%">Outsource</th>
+          <th style="width:16%">AYD (Vendor)</th>
+          <th style="width:16%">Hospital IT</th>
+          <th style="width:16%">Hospital Mgmt</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ตรวจสอบ Hardware Compatibility</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-I">I</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>ยืนยัน License Coverage</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+          <td><span class="r-I">I</span></td>
+          <td><span class="r-I">I</span></td>
+        </tr>
+        <tr>
+          <td>ติดตั้ง ESXi + Apply License</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>Config Network (vSwitch / VLAN)</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>สร้าง Datastore (NVMe / SATA)</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+          <td><span class="r-I">I</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>Restore VM ทั้ง 4 ตัวจาก ESXi เดิม</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+          <td><span class="r-I">I</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>ตรวจสอบ VM หลัง Restore (Boot / Network / App)</td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>ติดตั้ง HIS Application</td>
+          <td><span class="r-dash">—</span></td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-dash">—</span></td>
+        </tr>
+        <tr>
+          <td>อนุมัติ Downtime Window</td>
+          <td><span class="r-dash">—</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-C">C</span></td>
+          <td><span class="r-A">A</span></td>
+        </tr>
+        <tr>
+          <td>UAT และ Sign-off ระบบ</td>
+          <td><span class="r-I">I</span></td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-R">R</span></td>
+          <td><span class="r-A">A</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 6. SIGN-OFF -->
+<div class="signoff-box">
+  <h2>Outsource Acknowledgement</h2>
+  <div class="so-sub">Outsource ต้อง acknowledge และ sign-off ว่าอ่าน เข้าใจ และยอมรับ Requirement + Constraint ทุกข้อก่อนเริ่มงาน</div>
+
+  <div class="signoff-grid">
+    <div class="so-item">
+      <div class="so-role">Outsource Representative</div>
+      <div class="so-name">ชื่อ: ______________________</div>
+      <div class="so-line">ลายมือชื่อ: ________________<br>วันที่: ___________________</div>
+    </div>
+    <div class="so-item">
+      <div class="so-role">AYD Project Manager</div>
+      <div class="so-name">ชื่อ: ______________________</div>
+      <div class="so-line">ลายมือชื่อ: ________________<br>วันที่: ___________________</div>
+    </div>
+    <div class="so-item">
+      <div class="so-role">Hospital IT Coordinator</div>
+      <div class="so-name">ชื่อ: ______________________</div>
+      <div class="so-line">ลายมือชื่อ: ________________<br>วันที่: ___________________</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  HAOS Migration — Outsource Requirement & Constraint v1.0 | AYD Project Team | 2026
+</footer>
+
+</body>
+</html>

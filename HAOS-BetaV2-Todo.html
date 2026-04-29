@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAOS β-v2 — Task List สำหรับ Implementation</title>
+<style>
+  :root {
+    --c-master: #0ea5e9;
+    --c-master-dark: #0369a1;
+    --c-log: #8b5cf6;
+    --c-log-dark: #5b21b6;
+    --c-replica: #10b981;
+    --c-replica-dark: #047857;
+    --c-app: #f59e0b;
+    --c-shared: #64748b;
+    --c-shared-dark: #334155;
+    --c-bg: #f8fafc;
+    --c-card: #ffffff;
+    --c-border: #e2e8f0;
+    --c-text: #0f172a;
+    --c-muted: #64748b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Sarabun", "Noto Sans Thai", "Segoe UI", sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.65;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+  header {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+    color: white;
+    padding: 28px 24px;
+    margin-bottom: 24px;
+  }
+
+  header h1 { margin: 0 0 6px 0; font-size: 26px; font-weight: 700; }
+  header .sub { color: #a7f3d0; font-size: 14px; }
+  header .meta { display: flex; gap: 20px; margin-top: 12px; font-size: 12px; color: #d1fae5; }
+
+  /* Phase block */
+  .phase {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .phase-header {
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .phase-header .phase-num {
+    background: rgba(0,0,0,0.15);
+    color: white;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .ph-decision .phase-header { background: #7c3aed; color: white; }
+  .ph-hw       .phase-header { background: #0369a1; color: white; }
+  .ph-raid     .phase-header { background: #b45309; color: white; }
+  .ph-esxi     .phase-header { background: #0f766e; color: white; }
+  .ph-vm       .phase-header { background: #065f46; color: white; }
+  .ph-validate .phase-header { background: #374151; color: white; }
+
+  .phase-body { padding: 16px 20px; }
+
+  /* Checklist */
+  .tasklist { list-style: none; padding: 0; margin: 0; }
+
+  .tasklist li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--c-border);
+    align-items: flex-start;
+  }
+
+  .tasklist li:last-child { border-bottom: none; }
+
+  .cb {
+    width: 20px; height: 20px;
+    border: 2px solid #94a3b8;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .task-content { flex: 1; }
+  .task-title { font-weight: 600; font-size: 14px; }
+  .task-detail { font-size: 12px; color: var(--c-muted); margin-top: 3px; }
+
+  .owner-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 5px;
+  }
+
+  .owner-exec   { background: #fde8ff; color: #701a75; }
+  .owner-dba    { background: #dbeafe; color: #1e40af; }
+  .owner-it     { background: #dcfce7; color: #166534; }
+  .owner-eng    { background: #fef3c7; color: #92400e; }
+  .owner-pm     { background: #e2e8f0; color: #334155; }
+
+  /* Config value table */
+  .cfg {
+    background: #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--c-border);
+    margin: 10px 0;
+    font-size: 13px;
+  }
+
+  .cfg-row { display: grid; grid-template-columns: 200px 1fr; border-bottom: 1px solid var(--c-border); }
+  .cfg-row:last-child { border-bottom: none; }
+  .cfg-k { padding: 8px 12px; font-weight: 600; background: #e2e8f0; }
+  .cfg-v { padding: 8px 12px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+
+  /* Pool badges */
+  .pool-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    color: white;
+    margin-right: 6px;
+  }
+
+  .pool-master { background: var(--c-master-dark); }
+  .pool-log    { background: var(--c-log-dark); }
+  .pool-shared { background: var(--c-shared-dark); }
+  .pool-boot   { background: #475569; }
+
+  /* Callouts */
+  .callout {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .callout.warn    { background: #fffbeb; border-left-color: #f59e0b; }
+  .callout.danger  { background: #fef2f2; border-left-color: #dc2626; }
+  .callout.info    { background: #eff6ff; border-left-color: #3b82f6; }
+  .callout.success { background: #f0fdf4; border-left-color: #10b981; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* Section h3 */
+  h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px 0; color: var(--c-shared-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  code {
+    background: #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--c-muted);
+    padding: 20px;
+    border-top: 1px solid var(--c-border);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>HAOS Migration — Option β-v2 Task List</h1>
+    <div class="sub">Log Separated Layout (ตัวเลือกที่แนะนำ) — รายการสิ่งที่ต้องทำทั้งหมด</div>
+    <div class="meta">
+      <span>Server: Lenovo ThinkSystem SR650 V4</span>
+      <span>Target: ESXi 8 + 4 VMs</span>
+      <span>Design: Pool 1 Master Data | Pool 2 Master Log | Pool 3 Shared</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== PHASE 0: DECISIONS ===================== -->
+<div class="phase ph-decision">
+  <div class="phase-header">
+    <div class="phase-num">0</div>
+    สิ่งที่ต้องตัดสินใจก่อน (Pre-Decisions) — ต้องได้คำตอบก่อนเริ่ม implement
+  </div>
+  <div class="phase-body">
+    <div class="callout warn"><strong>⚠️ ถ้าตัดสินใจเหล่านี้ไม่เสร็จ การ implement อาจต้อง redo ทีหลัง</strong></div>
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ยืนยัน Backplane type กับ Lenovo (AnyBay ต้องเป็น AnyBay)</div>
+          <div class="task-detail">ขอ Config ID / DCSC sheet + cabling diagram — ถ้าไม่ใช่ AnyBay ต้อง redesign ทั้งหมด เพราะ 940-16i คุม NVMe ไม่ได้ถ้าเป็น direct-attach</div>
+          <span class="owner-tag owner-pm">PM</span>
+          <span class="owner-tag owner-it">IT Manager</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ยืนยัน DB growth rate เฉลี่ยต่อปี กับ DBA</div>
+          <div class="task-detail">ถ้า ≤10%/ปี → β-v2 รองรับได้ 3 ปี (Master pool 6.4TB) | ถ้า &gt;10%/ปี → ต้องขอเพิ่ม NVMe drive 2 ลูก</div>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ยืนยัน Replica role — passive DR หรือ readable secondary?</div>
+          <div class="task-detail">passive DR = ใช้ license ที่มีอยู่ได้ | readable secondary = ต้องซื้อ SQL Enterprise เพิ่มอีก 1 ตัว (~฿490K)</div>
+          <span class="owner-tag owner-dba">DBA</span>
+          <span class="owner-tag owner-exec">ผู้บริหาร</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ตัดสินใจเก็บ bare metal เดิมเป็น DR standby หรือปลด</div>
+          <div class="task-detail">เก็บ = มี fallback ถ้า server ใหม่มีปัญหา (แนะนำอย่างน้อย 3-6 เดือน) | ปลด = ไม่มี failover แต่ประหยัด license + maintenance</div>
+          <span class="owner-tag owner-exec">ผู้บริหาร</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ยืนยัน Downtime window สำหรับ cutover — ยอมรับกี่ชั่วโมง?</div>
+          <div class="task-detail">กระทบ migration strategy: live sync (downtime สั้น) vs cold copy (downtime นาน) และ rollback window</div>
+          <span class="owner-tag owner-exec">ผู้บริหาร</span>
+          <span class="owner-tag owner-it">IT Manager</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">วางแผน Backup + DR strategy (ไม่อยู่ใน BOM)</div>
+          <div class="task-detail">server ใหม่ยังไม่มี plan backup off-site — ต้องจัดทำก่อน go-live</div>
+          <span class="owner-tag owner-it">IT Manager</span>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== PHASE 1: HARDWARE ===================== -->
+<div class="phase ph-hw">
+  <div class="phase-header">
+    <div class="phase-num">1</div>
+    รับ Hardware และตรวจสอบ BOM
+  </div>
+  <div class="phase-body">
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ตรวจ serial number ทุกชิ้นตาม BOM — ครบ 10 items</div>
+          <div class="task-detail">CPU ×2, RAM ×8, NVMe ×8, SATA ×2, 940-16i, Network card</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Activate Lenovo Premier 24×7 4HR SLA contract</div>
+          <div class="task-detail">ตรวจสอบ confirmation จาก Lenovo ว่า SLA active แล้ว — นี่คือ mitigation เดียวสำหรับ "ไม่มี hot spare"</div>
+          <span class="owner-tag owner-pm">PM</span>
+          <span class="owner-tag owner-it">IT Manager</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Update firmware ทุกอุปกรณ์เป็น latest GA stable</div>
+          <div class="task-detail">BIOS, BMC/iDRAC, RAID Controller 940-16i, NVMe drives — ใช้ Lenovo UpdateXpress หรือ XCC</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== PHASE 2: RAID ===================== -->
+<div class="phase ph-raid">
+  <div class="phase-header">
+    <div class="phase-num">2</div>
+    RAID Configuration (ผ่าน 940-16i Controller)
+  </div>
+  <div class="phase-body">
+    <div class="callout danger"><strong>🔴 ห้าม improvise — ต้องตรง spec นี้เท่านั้น ถ้าต้องเปลี่ยนต้องขออนุมัติ PM ก่อน</strong></div>
+
+    <h3>Boot Array</h3>
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title"><span class="pool-tag pool-boot">Boot</span> SATA #1 + SATA #2 → RAID 1 → 480 GB usable</div>
+          <div class="task-detail">target สำหรับ ESXi install</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+    </ul>
+
+    <h3>NVMe Data Pools</h3>
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title"><span class="pool-tag pool-master">Pool 1</span> NVMe #1-4 → RAID 10 → 6.4 TB usable (DS-MASTER-DATA)</div>
+          <div class="task-detail">Stripe size 64KB — สำหรับ Master OS + SQL Data (.mdf) + TempDB</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title"><span class="pool-tag pool-log">Pool 2</span> NVMe #5-6 → RAID 1 → 3.2 TB usable (DS-MASTER-LOG)</div>
+          <div class="task-detail">Stripe size 64KB — สำหรับ SQL Log (.ldf) โดยเฉพาะ — นี่คือ key advantage ของ β-v2</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title"><span class="pool-tag pool-shared">Pool 3</span> NVMe #7-8 → RAID 1 → 3.2 TB usable (DS-SHARED)</div>
+          <div class="task-detail">Stripe size 64KB — สำหรับ Replica+ELK, App, Report (low-I/O workloads)</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+    </ul>
+
+    <h3>Controller Policy (ทุก Pool)</h3>
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Read Policy</div><div class="cfg-v">Always Read Ahead</div></div>
+      <div class="cfg-row"><div class="cfg-k">Write Policy</div><div class="cfg-v">Write Back with BBU (4GB flash cache)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Disk Cache</div><div class="cfg-v">Disabled (ใช้ controller cache แทน)</div></div>
+      <div class="cfg-row"><div class="cfg-k">I/O Policy</div><div class="cfg-v">Direct I/O</div></div>
+    </div>
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ตั้งค่า controller policy ตาม spec ด้านบน ครบทุก pool</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== PHASE 3: VALIDATE ===================== -->
+<div class="phase ph-validate">
+  <div class="phase-header">
+    <div class="phase-num">3</div>
+    Post-Install Validation — ต้องผ่านทุกข้อก่อน Go-Live
+  </div>
+  <div class="phase-body">
+    <ul class="tasklist">
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Run IOmeter / CrystalDiskMark บน Master VM</div>
+          <div class="task-detail">Target: &gt;200K IOPS random read/write (NVMe RAID 10 ควรทำได้สบาย)</div>
+          <span class="owner-tag owner-eng">Engineer</span>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Run SQLIOSim บน Master VM</div>
+          <div class="task-detail">ต้อง: ไม่มี error + latency &lt;5ms</div>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Verify SQL buffer pool โตถึง ~200 GB หลัง warmup</div>
+          <div class="task-detail">ใช้ <code>SELECT physical_memory_in_use_kb FROM sys.dm_os_process_memory</code></div>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Verify Log write latency &lt;1ms ตอน idle</div>
+          <div class="task-detail">ดูจาก <code>sys.dm_io_virtual_file_stats</code> หรือ Windows Performance Monitor</div>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">ทดสอบ Backup + Restore (full + log backup) ให้ successful</div>
+          <div class="task-detail">รวมถึงทดสอบ point-in-time restore ให้ทำได้จริง</div>
+          <span class="owner-tag owner-dba">DBA</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Install Monitoring Agent บนทุก VM</div>
+          <div class="task-detail">Zabbix / PRTG / ระบบที่โรงพยาบาลใช้ — ต้องมี alert สำหรับ disk full, high IOPS, replication lag</div>
+          <span class="owner-tag owner-it">IT</span>
+          <span class="owner-tag owner-eng">Engineer</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">Document baseline metrics ก่อน cutover</div>
+          <div class="task-detail">TPS, IOPS per pool, CPU%, RAM%, log write latency, replication lag — เก็บไว้ compare หลัง go-live</div>
+          <span class="owner-tag owner-dba">DBA</span>
+          <span class="owner-tag owner-it">IT</span>
+        </div>
+      </li>
+      <li>
+        <div class="cb"></div>
+        <div class="task-content">
+          <div class="task-title">UAT กับ Clinical team ก่อน cutover จริง</div>
+          <div class="task-detail">ทดสอบ scenario หลัก: OPD registration, IPD admission, dispensing, report generation</div>
+          <span class="owner-tag owner-it">IT</span>
+          <span class="owner-tag owner-exec">Clinical team</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout success">
+      <strong>✅ ผ่านทุกข้อ = พร้อม Go-Live</strong>
+      หลัง go-live ให้ monitor DS-SHARED อย่างใกล้ชิด 1 สัปดาห์แรก เพราะ Replica+ELK+App+Report share pool เดียวกัน ถ้า IOPS contention ให้ย้าย Report ไป off-peak schedule
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SUMMARY STATS ===================== -->
+<div class="phase" style="border-color:#10b981;">
+  <div class="phase-header" style="background:#f0fdf4; color:#065f46; border-bottom-color:#bbf7d0;">
+    <div class="phase-num" style="background:#10b981; color:white;">✓</div>
+    สรุป Resource Allocation ของ Option β-v2
+  </div>
+  <div class="phase-body">
+    <div class="cfg">
+      <div class="cfg-row"><div class="cfg-k">Pool 1 — Master Data</div><div class="cfg-v">NVMe #1-4, RAID 10, 6.4 TB → OS (200GB) + Data .mdf (5TB) + TempDB (300GB)</div></div>
+      <div class="cfg-row"><div class="cfg-k">Pool 2 — Master Log</div><div class="cfg-v">NVMe #5-6, RAID 1, 3.2 TB → Log .ldf (500GB) เท่านั้น — headroom 2.7TB</div></div>
+      <div class="cfg-row"><div class="cfg-k">Pool 3 — Shared</div><div class="cfg-v">NVMe #7-8, RAID 1, 3.2 TB → Replica+ELK ~1.3TB + App ~1TB + Report ~0.5TB = ใช้ ~2.8TB</div></div>
+      <div class="cfg-row"><div class="cfg-k">Boot</div><div class="cfg-v">SATA #1-2, RAID 1, 480 GB → ESXi</div></div>
+      <div class="cfg-row"><div class="cfg-k">RAM</div><div class="cfg-v">Master 240GB + Repl+ELK 128GB + App 64GB + Rpt 32GB + ESXi 32GB + Buffer 16GB = 512GB</div></div>
+      <div class="cfg-row"><div class="cfg-k">vCPU</div><div class="cfg-v">Master 8 (pinned) + Repl+ELK 12 + App 8 + Rpt 4 = 32 vCPU / 64 threads (1:2 ratio)</div></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  Option β-v2 Task List — สร้างจาก HAOS-Server-Design-Options.html | ต้องผ่าน review โดย DBA, IT Manager, Hospital Exec ก่อน implement
+</footer>
+
+</body>
+</html>

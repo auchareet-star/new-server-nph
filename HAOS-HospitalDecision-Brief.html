@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สิ่งที่โรงพยาบาลต้องรู้ก่อนย้ายระบบ — HAOS Migration</title>
+<style>
+  :root {
+    --blue: #0078d4;
+    --blue-dark: #005a9e;
+    --blue-bg: #eff6ff;
+    --green: #107c10;
+    --green-bg: #f0fdf4;
+    --orange: #c2500a;
+    --orange-bg: #fff7ed;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --gold: #b7791f;
+    --gold-bg: #fffbeb;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --card: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "Sarabun", "Noto Sans Thai", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0; padding: 0;
+    line-height: 1.75;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 52px 24px 44px;
+    text-align: center;
+  }
+
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 5px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    color: #bfdbfe;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 14px 0;
+    line-height: 1.25;
+  }
+
+  .hero .sub {
+    color: #93c5fd;
+    font-size: 15px;
+    max-width: 580px;
+    margin: 0 auto 32px;
+  }
+
+  .hero .three-q {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .hero .q-chip {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0f2fe;
+  }
+
+  .hero .q-chip span { color: #7dd3fc; font-size: 18px; margin-right: 8px; }
+
+  /* ===== LAYOUT ===== */
+  .container { max-width: 960px; margin: 0 auto; padding: 36px 24px; }
+
+  /* ===== SECTION TITLES ===== */
+  .sec-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .sec-num {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .sec-num.n1 { background: #0078d4; }
+  .sec-num.n2 { background: #107c10; }
+  .sec-num.n3 { background: #d97706; }
+
+  .sec-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+  .sec-label.c1 { color: #0078d4; }
+  .sec-label.c2 { color: #107c10; }
+  .sec-label.c3 { color: #d97706; }
+  .sec-title { font-size: 20px; font-weight: 800; margin: 0; color: var(--text); }
+  .sec-sub { font-size: 13px; color: var(--muted); margin: 2px 0 0 0; }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+
+  .card.b-blue   { border-left: 4px solid var(--blue); }
+  .card.b-green  { border-left: 4px solid var(--green); }
+  .card.b-orange { border-left: 4px solid #d97706; }
+
+  /* ===== CALLOUT ===== */
+  .callout {
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin: 14px 0;
+    font-size: 13px;
+    border-left: 4px solid;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout .ico { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .callout .body strong { display: block; font-size: 14px; margin-bottom: 3px; }
+  .callout.info   { background: var(--blue-bg);   border-left-color: var(--blue); }
+  .callout.ok     { background: var(--green-bg);  border-left-color: var(--green); }
+  .callout.warn   { background: var(--orange-bg); border-left-color: #f59e0b; }
+  .callout.danger { background: var(--red-bg);    border-left-color: var(--red); }
+
+  /* ===== REASON CARDS ===== */
+  .reason-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .reason-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    background: #fafbfc;
+  }
+
+  .reason-item .r-icon { font-size: 22px; margin-bottom: 6px; }
+  .reason-item .r-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  .reason-item .r-body { font-size: 12.5px; color: #4b5563; line-height: 1.6; }
+
+  /* ===== DECISION CARDS ===== */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .dec-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .dec-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dec-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .dec-badge.must    { background: #fde7e9; color: #dc2626; }
+  .dec-badge.choose  { background: #dff0d8; color: #107c10; }
+  .dec-badge.confirm { background: var(--blue-bg); color: var(--blue-dark); }
+
+  .dec-q { font-size: 14px; font-weight: 700; color: var(--text); }
+
+  .dec-body {
+    padding: 16px 18px;
+    font-size: 13px;
+  }
+
+  .dec-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+  .opt {
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .opt.opt-a { border-color: var(--green); background: var(--green-bg); }
+  .opt.opt-b { border-color: #d1d5db; background: #f9fafb; }
+  .opt .opt-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .opt.opt-a .opt-tag { color: var(--green); }
+  .opt.opt-b .opt-tag { color: var(--muted); }
+  .opt .opt-title { font-weight: 700; margin-bottom: 2px; }
+  .opt .opt-sub { font-size: 12px; color: var(--muted); }
+
+  /* ===== RISK TABLE ===== */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f1f5f9; font-weight: 700; padding: 10px 14px; border-bottom: 2px solid var(--border); text-align: left; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  .risk-level {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .risk-low    { background: #dff0d8; color: #107c10; }
+  .risk-medium { background: #fef9c3; color: #92400e; }
+  .risk-high   { background: #fde7e9; color: #dc2626; }
+
+  /* ===== TIMELINE ===== */
+  .timeline { position: relative; padding-left: 34px; margin: 16px 0; }
+  .timeline::before { content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+
+  .tl-item { position: relative; margin-bottom: 22px; }
+  .tl-dot {
+    position: absolute; left: -29px; top: 4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--blue);
+  }
+  .tl-dot.ok { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+  .tl-dot.warn { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b; }
+  .tl-title { font-weight: 700; font-size: 14px; }
+  .tl-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .tl-tag { font-size: 11px; font-weight: 600; color: var(--blue-dark); margin-top: 3px; }
+
+  /* ===== IMPACT CARD ===== */
+  .impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .impact-card {
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    border: 1px solid;
+  }
+
+  .impact-card.ok     { background: var(--green-bg);  border-color: #86efac; }
+  .impact-card.caution { background: var(--orange-bg); border-color: #fcd34d; }
+  .impact-card.info   { background: var(--blue-bg);   border-color: #93c5fd; }
+
+  .impact-card .i-icon { font-size: 28px; margin-bottom: 8px; }
+  .impact-card .i-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .impact-card .i-body { font-size: 12px; color: #4b5563; }
+
+  /* ===== FINAL DECISION BOX ===== */
+  .final-box {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 36px;
+    margin: 28px 0;
+  }
+
+  .final-box h2 { font-size: 22px; font-weight: 800; margin: 0 0 8px 0; }
+  .final-box .fb-sub { color: #93c5fd; font-size: 14px; margin-bottom: 28px; }
+
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 14px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .chk {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #7dd3fc;
+    font-weight: 800;
+  }
+  .checklist .li-title { font-weight: 700; color: white; }
+  .checklist .li-sub { font-size: 12px; color: #93c5fd; margin-top: 2px; }
+
+  .ask-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .ask-item {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+
+  .ask-item .a-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7dd3fc; margin-bottom: 4px; }
+  .ask-item .a-q { font-weight: 700; color: white; margin-bottom: 4px; }
+  .ask-item .a-note { font-size: 12px; color: #93c5fd; }
+
+  /* ===== PILL ===== */
+  .pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pill-ok   { background: #dff0d8; color: #107c10; }
+  .pill-warn { background: #fde7e9; color: #dc2626; }
+  .pill-blue { background: var(--blue-bg); color: var(--blue-dark); }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 680px) {
+    .reason-grid { grid-template-columns: 1fr; }
+    .impact-grid { grid-template-columns: 1fr; }
+    .ask-grid    { grid-template-columns: 1fr; }
+    .hero h1     { font-size: 24px; }
+    .three-q     { flex-direction: column; align-items: center; }
+  }
+
+  @media print {
+    .dec-body { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="badge">HAOS Migration — สรุปสำหรับโรงพยาบาล</div>
+  <h1>สิ่งที่โรงพยาบาลต้องรู้<br>ก่อนย้ายระบบ HAOS Server</h1>
+  <p class="sub">เอกสารนี้ตอบ 3 คำถามหลักที่ฝ่ายบริหารและผู้รับผิดชอบมักสงสัยก่อนอนุมัติโครงการ</p>
+  <div class="three-q">
+    <div class="q-chip"><span>1️⃣</span>แจ้งให้ทราบ</div>
+    <div class="q-chip"><span>2️⃣</span>ต้องตัดสินใจอะไรบ้าง?</div>
+    <div class="q-chip"><span>3️⃣</span>จะมีปัญหากับการย้ายไหม?</div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== EXECUTIVE SUMMARY ===== -->
+<div class="card" style="border-top: 4px solid #0078d4; background: #fafbff;">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+    <div style="background:#0078d4;color:white;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">Executive Summary</div>
+    <div style="font-size:12px;color:var(--muted);">สรุปสำหรับผู้บริหาร — อ่าน 2 นาที</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:10px;">สิ่งที่กำลังจะเกิดขึ้น</div>
+      <p style="margin:0 0 10px;font-size:13.5px;color:#1e293b;line-height:1.7;">
+        ทีม AYD กำลังย้ายระบบ HAOS ไปรันบน <strong>Server Lenovo ใหม่</strong> โดยใช้ <strong>Microsoft Hyper-V</strong> เป็น platform virtualization แทน VMware เดิม
+      </p>
+      <p style="margin:0;font-size:13.5px;color:#1e293b;line-height:1.7;">
+        การย้ายจะทำให้ระบบเร็วขึ้นชัดเจน และ <strong>ไม่มีค่าใช้จ่าย Hypervisor เพิ่มเติม</strong> เนื่องจาก License ที่ซื้อมาแล้วครอบคลุมครบ
+      </p>
+    </div>
+
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:10px;">สิ่งที่ต้องการจากโรงพยาบาล</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:13px;">
+          <span style="background:#dbeafe;color:#1d4ed8;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;margin-top:1px;">1</span>
+          <span><strong>เลือกวันย้ายระบบ</strong> ที่ระบบ down ได้ 4–8 ชั่วโมง</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:13px;">
+          <span style="background:#dbeafe;color:#1d4ed8;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;margin-top:1px;">2</span>
+          <span><strong>ระบุผู้ประสานงาน IT</strong> สำหรับทดสอบและ Sign-off</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:13px;">
+          <span style="background:#dbeafe;color:#1d4ed8;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0;margin-top:1px;">3</span>
+          <span><strong>แจ้ง Clinical ล่วงหน้า</strong> 2 สัปดาห์ก่อนวันย้าย</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="border-top:1px solid var(--border);margin-top:18px;padding-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;text-align:center;">
+    <div style="padding:0 12px;border-right:1px solid var(--border);">
+      <div style="font-size:22px;font-weight:800;color:#0078d4;">฿0</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">ค่า Hypervisor เพิ่มเติม</div>
+    </div>
+    <div style="padding:0 12px;border-right:1px solid var(--border);">
+      <div style="font-size:22px;font-weight:800;color:#107c10;">4–8 ชม.</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Downtime ที่วางแผนไว้</div>
+    </div>
+    <div style="padding:0 12px;border-right:1px solid var(--border);">
+      <div style="font-size:22px;font-weight:800;color:#0078d4;">24×7</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Hardware Support SLA</div>
+    </div>
+    <div style="padding:0 12px;">
+      <div style="font-size:22px;font-weight:800;color:#107c10;">ต่ำ</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">ความเสี่ยงโดยรวม</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 1: ทำไมถึงบอก ===== -->
+<div class="card b-blue">
+  <div class="sec-head">
+    <div class="sec-num n1">1</div>
+    <div>
+      <div class="sec-label c1">แจ้งให้ทราบ</div>
+      <h2 class="sec-title">โครงการนี้เลือกใช้ VMware ESXi — และต้องการอะไรจากโรงพยาบาล</h2>
+      <p class="sec-sub">แจ้งการตัดสินใจด้านเทคนิค และสิ่งที่ต้องการให้โรงพยาบาลรับทราบและดำเนินการร่วม</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <div class="ico">💡</div>
+    <div class="body">
+      <strong>ขอความเห็นชอบและความร่วมมือในการย้ายระบบ</strong>
+      โครงการนี้อยู่ใน scope และงบประมาณที่ตกลงไว้แล้ว สิ่งที่ต้องการคือการรับรู้ร่วมกันว่าจะเกิดอะไรขึ้น เมื่อไหร่ และโรงพยาบาลต้องเตรียมตัวอย่างไร
+    </div>
+  </div>
+
+  <div class="reason-grid">
+    <div class="reason-item">
+      <div class="r-icon">📋</div>
+      <div class="r-title">โครงการถึงจุดที่ต้องตัดสินใจ</div>
+      <div class="r-body">Server ใหม่จาก Lenovo พร้อมแล้ว — ถัดไปคือการย้าย VM ซึ่งต้องมีช่วง downtime ที่วางแผนไว้ โรงพยาบาลต้องเลือกช่วงเวลาที่เหมาะสม</div>
+    </div>
+    <div class="reason-item">
+      <div class="r-icon">⚙️</div>
+      <div class="r-title">เลือก Technology Platform แล้ว</div>
+      <div class="r-body">ทีม AYD เลือกใช้ VMware ESXi เพราะมี License vSphere Enterprise Plus อยู่แล้ว — ต้องการให้โรงพยาบาลรับทราบและเห็นด้วย</div>
+    </div>
+    <div class="reason-item">
+      <div class="r-icon">⏰</div>
+      <div class="r-title">ระบบจะ Down ช่วงสั้นๆ</div>
+      <div class="r-body">การย้ายจะทำให้ระบบ HAOS ไม่สามารถใช้งานได้ประมาณ 4–8 ชั่วโมง — ต้องแจ้งทุกฝ่ายที่เกี่ยวข้อง และจัดแผนรองรับในช่วงนั้น</div>
+    </div>
+    <div class="reason-item">
+      <div class="r-icon">🤝</div>
+      <div class="r-title">ต้องการ Coordinator จากโรงพยาบาล</div>
+      <div class="r-body">ทีม IT โรงพยาบาลต้องร่วมทดสอบระบบหลังย้าย และรับส่งงานดูแลระบบในบางส่วน — ต้องระบุว่าใครเป็นผู้รับผิดชอบ</div>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="ico">✅</div>
+    <div class="body">
+      <strong>สรุปสั้น: เราไม่ได้ขอให้โรงพยาบาลตัดสินใจเรื่องเทคนิค</strong>
+      สิ่งที่ขอคือ (1) รับทราบว่าจะมีการย้ายระบบ (2) ช่วยเลือกวันที่ downtime กระทบน้อยที่สุด (3) ระบุผู้ประสานงานฝ่าย IT และ Clinical เพื่อการ UAT หลังย้าย
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 2: ต้องตัดสินใจอะไร ===== -->
+<div class="card b-green">
+  <div class="sec-head">
+    <div class="sec-num n2">2</div>
+    <div>
+      <div class="sec-label c2">คำถามที่ 2</div>
+      <h2 class="sec-title">โรงพยาบาลต้องตัดสินใจอะไรบ้าง?</h2>
+      <p class="sec-sub">รายการการตัดสินใจที่ต้องการคำตอบก่อนเริ่ม Migration</p>
+    </div>
+  </div>
+
+  <div class="decision-grid">
+
+    <!-- D1 -->
+    <div class="dec-item">
+      <div class="dec-head">
+        <span class="dec-badge must">จำเป็น</span>
+        <span class="dec-q">เลือกวันและช่วงเวลา Maintenance Window สำหรับการย้ายระบบ</span>
+      </div>
+      <div class="dec-body">
+        <p style="margin:0 0 10px;color:#4b5563;">ระบบ HAOS จะ <strong>ไม่สามารถใช้งานได้ประมาณ 4–8 ชั่วโมง</strong> ในช่วงย้าย ต้องเลือกช่วงที่กระทบน้อยที่สุด</p>
+        <div class="dec-options">
+          <div class="opt opt-a">
+            <div class="opt-tag">แนะนำ</div>
+            <div class="opt-title">วันศุกร์ดึก หรือวันเสาร์เช้า</div>
+            <div class="opt-sub">ผู้ป่วย Out-patient น้อย, เจ้าหน้าที่สามารถใช้ระบบ Offline ชั่วคราวได้</div>
+          </div>
+          <div class="opt opt-b">
+            <div class="opt-tag">ทางเลือก</div>
+            <div class="opt-title">วันหยุดนักขัตฤกษ์</div>
+            <div class="opt-sub">ขึ้นอยู่กับปฏิทินผู้ป่วย ต้องตรวจสอบว่าไม่มี OPD ขนาดใหญ่</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">⚠️ ต้องแจ้งทีม Clinical ล่วงหน้าอย่างน้อย 2 สัปดาห์ เพื่อเตรียมแผนรองรับ (Downtime Procedure)</div>
+      </div>
+    </div>
+
+    <!-- D2 -->
+    <div class="dec-item">
+      <div class="dec-head">
+        <span class="dec-badge must">จำเป็น</span>
+        <span class="dec-q">ระบุผู้ประสานงาน IT ที่จะทดสอบและ Sign-off หลังย้าย</span>
+      </div>
+      <div class="dec-body">
+        <p style="margin:0 0 10px;color:#4b5563;">หลังย้ายเสร็จ ทีม AYD จะทดสอบระบบร่วมกับ IT โรงพยาบาล ก่อน Go-live จริง ต้องมีคนจากโรงพยาบาลที่:</p>
+        <ul style="margin:0;padding-left:18px;font-size:13px;color:#374151;">
+          <li>เข้าใจ Workflow ของ HAOS HIS เพียงพอที่จะยืนยันว่าระบบทำงานถูกต้อง</li>
+          <li>มีสิทธิ์ตรวจสอบข้อมูลผู้ป่วย เพื่อทดสอบว่าข้อมูลครบและถูกต้อง</li>
+          <li>สามารถประสานงานกับฝ่าย Clinical ได้ในกรณีที่พบปัญหาหลังย้าย</li>
+        </ul>
+        <div style="margin-top:10px;background:#f0fdf4;border-radius:8px;padding:10px;font-size:12px;color:#166534;border:1px solid #bbf7d0;">
+          ✅ โดยปกติคือ IT Admin หรือ HIS Coordinator ของโรงพยาบาล — ต้องการชื่อและเบอร์ติดต่อ
+        </div>
+      </div>
+    </div>
+
+    <!-- D3 -->
+    <div class="dec-item">
+      <div class="dec-head">
+        <span class="dec-badge choose">ต้องเลือก</span>
+        <span class="dec-q">Server เก่า (Bare Metal เดิม) จะเก็บไว้เป็น Standby กี่เดือน?</span>
+      </div>
+      <div class="dec-body">
+        <p style="margin:0 0 10px;color:#4b5563;">หลังย้ายสำเร็จ แนะนำให้เก็บ Server เก่าไว้เพื่อความมั่นใจ ในกรณีที่เกิดปัญหาไม่คาดฝัน สามารถ Rollback ได้ภายใน 4 ชั่วโมง</p>
+        <div class="dec-options">
+          <div class="opt opt-a">
+            <div class="opt-tag">แนะนำ</div>
+            <div class="opt-title">เก็บไว้ 3–6 เดือน</div>
+            <div class="opt-sub">ปิดไว้แต่ไม่ถอดออก — พร้อม boot ได้ทันทีถ้าฉุกเฉิน</div>
+          </div>
+          <div class="opt opt-b">
+            <div class="opt-tag">ประหยัดพื้นที่</div>
+            <div class="opt-title">เก็บ 1 เดือน แล้วนำไปใช้งานอื่น</div>
+            <div class="opt-sub">ความเสี่ยงสูงกว่า ถ้าพบปัญหาช้าอาจ rollback ไม่ทัน</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D4 -->
+    <div class="dec-item">
+      <div class="dec-head">
+        <span class="dec-badge confirm">รับทราบ</span>
+        <span class="dec-q">รับทราบว่า VMware ESXi คือ Platform ที่เลือกใช้</span>
+      </div>
+      <div class="dec-body">
+        <p style="margin:0 0 10px;color:#4b5563;">ทีม AYD เลือกใช้ <strong>VMware ESXi</strong> เพราะ:</p>
+        <ul style="margin:0;padding-left:18px;font-size:13px;color:#374151;">
+          <li><strong>มี License vSphere 7 Enterprise Plus อยู่แล้ว</strong> — ไม่หมดอายุ (Never expiry) ครอบคลุม feature ระดับ Enterprise</li>
+          <li>รองรับ VM ทุกตัวที่ต้องการ — HA, vMotion, Storage vMotion พร้อมใช้</li>
+          <li>Outsource รับผิดชอบ compatibility กับ Hardware SR650 V4 และการติดตั้ง</li>
+        </ul>
+        <div style="margin-top:10px;background:var(--blue-bg);border-radius:8px;padding:10px;font-size:12px;color:var(--blue-dark);border:1px solid #bfdbfe;">
+          📌 โรงพยาบาลไม่ต้องตัดสินใจเรื่องนี้ใหม่ — แค่รับทราบว่านี่คือแนวทางที่เลือกไว้แล้ว
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== SECTION 3: จะมีปัญหาไหม ===== -->
+<div class="card b-orange">
+  <div class="sec-head">
+    <div class="sec-num n3">3</div>
+    <div>
+      <div class="sec-label c3">คำถามที่ 3</div>
+      <h2 class="sec-title">จะมีปัญหากับแผนย้ายเครื่องไหม?</h2>
+      <p class="sec-sub">ความเสี่ยงที่มีอยู่จริง และสิ่งที่วางแผนรองรับไว้แล้ว</p>
+    </div>
+  </div>
+
+  <!-- Impact summary -->
+  <div class="impact-grid">
+    <div class="impact-card ok">
+      <div class="i-icon">💾</div>
+      <div class="i-title">ข้อมูลผู้ป่วยไม่หาย</div>
+      <div class="i-body">SQL Database ย้ายด้วย Backup/Restore — ตรวจสอบ record count และ checksum ก่อน cutover</div>
+    </div>
+    <div class="impact-card caution">
+      <div class="i-icon">⏸️</div>
+      <div class="i-title">ระบบ down 4–8 ชั่วโมง</div>
+      <div class="i-body">เป็น planned downtime — ต้องวางแผน downtime procedure ร่วมกัน และแจ้งล่วงหน้า 2 สัปดาห์</div>
+    </div>
+    <div class="impact-card info">
+      <div class="i-icon">🚀</div>
+      <div class="i-title">ระบบเร็วขึ้นหลังย้าย</div>
+      <div class="i-body">แก้ I/O contention บน shared disk — คุณหมอและพยาบาลจะรู้สึกได้ถึงความเร็วที่ดีขึ้น</div>
+    </div>
+  </div>
+
+  <!-- Risk table -->
+  <h3 style="font-size:15px;font-weight:700;margin:20px 0 12px 0;">ตารางความเสี่ยงและแผนรองรับ</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:26%">ความเสี่ยง</th>
+        <th style="width:12%">ระดับ</th>
+        <th style="width:37%">อธิบาย</th>
+        <th style="width:25%">แผนรองรับ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ข้อมูลสูญหาย</strong></td>
+        <td><span class="risk-level risk-low">ต่ำมาก</span></td>
+        <td>SQL ย้ายด้วย Backup/Restore มีการตรวจสอบ checksum และ record count ก่อน cutover</td>
+        <td>Backup full ก่อนเริ่มทุกครั้ง, verify ก่อน cut</td>
+      </tr>
+      <tr>
+        <td><strong>ย้ายแล้วระบบช้าลง</strong></td>
+        <td><span class="risk-level risk-low">ต่ำ</span></td>
+        <td>Hardware ใหม่ Lenovo + NVMe + RAM 240 GB จาก 160 GB เดิม — ทุกปัจจัยชี้ไปที่ "เร็วขึ้น"</td>
+        <td>Rollback กลับ server เก่าได้ทันทีถ้าพบปัญหา</td>
+      </tr>
+      <tr>
+        <td><strong>การ Convert VM ล้มเหลว</strong></td>
+        <td><span class="risk-level risk-medium">ปานกลาง</span></td>
+        <td>VMDK → VHDX ต้องใช้ StarWind V2V และทดสอบก่อน — โอกาสเกิดปัญหาทางเทคนิคมีบ้าง แต่จัดการได้</td>
+        <td>ทำ test run ก่อน production cut — SQL ใช้ Backup/Restore หลีกเลี่ยง convert</td>
+      </tr>
+      <tr>
+        <td><strong>Downtime นานกว่าคาด</strong></td>
+        <td><span class="risk-level risk-medium">ปานกลาง</span></td>
+        <td>ถ้าพบปัญหาระหว่างย้าย อาจต้องขยาย window — ต้องวางแผน buffer เวลาไว้</td>
+        <td>เริ่มช่วงดึก, วางแผน 12 ชั่วโมง แม้คาดว่า 8 ชั่วโมงก็พอ</td>
+      </tr>
+      <tr>
+        <td><strong>Hyper-V Host ล่มหลังย้าย</strong></td>
+        <td><span class="risk-level risk-low">ต่ำ</span></td>
+        <td>Single server = ทุก VM down ถ้า Host มีปัญหา — แต่นี่คือข้อจำกัดของ single server ไม่ใช่ของ Hyper-V</td>
+        <td>Lenovo Premier 24×7 4HR SLA — engineer ถึงที่ภายใน 4 ชั่วโมง + เก็บ server เก่าไว้เป็น standby</td>
+      </tr>
+      <tr>
+        <td><strong>Application ไม่ทำงานบน VM</strong></td>
+        <td><span class="risk-level risk-low">ต่ำมาก</span></td>
+        <td>HAOS และ Software ที่ใช้รองรับ Hyper-V อยู่แล้ว — Panacea-Repl ก็รันบน Hyper-V อยู่แล้วในปัจจุบัน</td>
+        <td>ทดสอบ UAT ร่วมกับ Clinical ก่อน Go-live</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Migration timeline -->
+  <h3 style="font-size:15px;font-weight:700;margin:24px 0 12px 0;">ลำดับขั้นตอนการย้าย — ภาพรวมสำหรับโรงพยาบาล</h3>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-title">เตรียม Server และ Configuration (ก่อนวัน M)</div>
+      <div class="tl-sub">ติดตั้ง Hyper-V, ตั้งค่า Storage Pool, ทดสอบ Network — โรงพยาบาลยังใช้ระบบเดิมได้ปกติ</div>
+      <div class="tl-tag">ไม่กระทบการใช้งาน</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot warn"></div>
+      <div class="tl-title">เริ่ม Maintenance Window (วัน M กลางดึก)</div>
+      <div class="tl-sub">ปิดระบบ HAOS ตาม Downtime Procedure — เจ้าหน้าที่ใช้ระบบ Offline ชั่วคราว</div>
+      <div class="tl-tag">ระบบ down — ต้องแจ้ง Clinical ล่วงหน้า 2 สัปดาห์</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-title">ย้าย SQL Database และ VM (4–6 ชั่วโมง)</div>
+      <div class="tl-sub">Restore SQL Database ไป VM ใหม่, Convert VM อื่น, ตรวจสอบข้อมูลครบถ้วน</div>
+      <div class="tl-tag">ทีม AYD ดำเนินการ — ไม่ต้องการ IT โรงพยาบาล ณ จุดนี้</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-title">ทดสอบร่วมกับ IT โรงพยาบาล (1–2 ชั่วโมง)</div>
+      <div class="tl-sub">Login, ทดสอบ OPD/IPD workflow, ตรวจสอบ report, ยืนยันว่าข้อมูลถูกต้อง</div>
+      <div class="tl-tag">ต้องการ IT Coordinator + Clinical Staff ของโรงพยาบาล</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-title">Go-Live — เปิดระบบตามปกติ (เช้าวัน M+1)</div>
+      <div class="tl-sub">แจ้งเจ้าหน้าที่ทุกหน่วยว่าระบบพร้อมใช้งาน — AYD standby 24 ชั่วโมงในวันแรก</div>
+      <div class="tl-tag">ระบบกลับมาใช้งานได้ก่อนเปิดทำการ</div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <strong>สิ่งที่โรงพยาบาลต้องเตรียมล่วงหน้า</strong>
+      (1) <strong>Downtime Procedure</strong> — เอกสาร/คู่มือสำหรับเจ้าหน้าที่ทำงานโดยไม่ใช้ระบบคอมพิวเตอร์ช่วงสั้น ๆ  ·
+      (2) <strong>แจ้งทีม Clinical</strong> ล่วงหน้า 2 สัปดาห์ —  OPD, IPD, ห้องฉุกเฉิน, ห้อง Lab ·
+      (3) <strong>IT Coordinator</strong> พร้อม on-site วันที่ย้าย
+    </div>
+  </div>
+</div>
+
+<!-- ===== FINAL DECISION BOX ===== -->
+<div class="final-box">
+  <h2>สิ่งที่โรงพยาบาลต้องให้คำตอบ</h2>
+  <div class="fb-sub">รายการด้านล่างคือทั้งหมดที่ต้องการจากโรงพยาบาลเพื่อดำเนินโครงการต่อ</div>
+
+  <ul class="checklist">
+    <li>
+      <div class="chk">1</div>
+      <div>
+        <div class="li-title">เลือกวันสำหรับ Maintenance Window</div>
+        <div class="li-sub">ต้องการวัน + ช่วงเวลา ที่ระบบสามารถ down ได้ 4–8 ชั่วโมงโดยไม่กระทบ Clinical งาน</div>
+      </div>
+    </li>
+    <li>
+      <div class="chk">2</div>
+      <div>
+        <div class="li-title">ระบุ IT Coordinator และ Clinical Tester</div>
+        <div class="li-sub">ชื่อ + เบอร์ติดต่อ ของผู้ที่จะร่วม UAT และ Sign-off หลังย้ายเสร็จ</div>
+      </div>
+    </li>
+    <li>
+      <div class="chk">3</div>
+      <div>
+        <div class="li-title">ตัดสินใจว่าจะเก็บ Server เก่าไว้กี่เดือน</div>
+        <div class="li-sub">3–6 เดือน (แนะนำ) หรือ 1 เดือน — ขึ้นอยู่กับนโยบายและพื้นที่ของโรงพยาบาล</div>
+      </div>
+    </li>
+    <li>
+      <div class="chk">4</div>
+      <div>
+        <div class="li-title">เตรียม Downtime Procedure และแจ้งทีม Clinical</div>
+        <div class="li-sub">AYD จะช่วยจัดทำ template — แต่โรงพยาบาลต้องเป็นเจ้าของและแจ้งทีมตัวเอง</div>
+      </div>
+    </li>
+  </ul>
+
+  <div class="ask-grid">
+    <div class="ask-item">
+      <div class="a-label">ไม่ต้องตัดสินใจ</div>
+      <div class="a-q">เลือก Platform Virtualization</div>
+      <div class="a-note">ทีม AYD ตัดสินใจใช้ VMware ESXi และรับผิดชอบส่วนนี้แล้ว</div>
+    </div>
+    <div class="ask-item">
+      <div class="a-label">ไม่ต้องตัดสินใจ</div>
+      <div class="a-q">รายละเอียดเทคนิคการย้าย</div>
+      <div class="a-note">เป็น scope ของทีม AYD และ Outsource ทั้งหมด</div>
+    </div>
+    <div class="ask-item">
+      <div class="a-label">ไม่ต้องจัดหา</div>
+      <div class="a-q">License VMware ESXi</div>
+      <div class="a-note">มี vSphere 7 Enterprise Plus อยู่แล้ว — Outsource รับผิดชอบ verify</div>
+    </div>
+    <div class="ask-item">
+      <div class="a-label">ไม่ต้องกังวล</div>
+      <div class="a-q">ข้อมูลผู้ป่วยสูญหาย</div>
+      <div class="a-note">มี backup plan และตรวจสอบก่อน cutover ทุกครั้ง</div>
+    </div>
+  </div>
+</div>
+
+<!-- Closing callout -->
+<div class="callout ok">
+  <div class="ico">🎯</div>
+  <div class="body">
+    <strong>ผลลัพธ์ที่โรงพยาบาลจะได้หลังย้ายระบบสำเร็จ</strong>
+    ระบบ HAOS เร็วขึ้นชัดเจน (แก้ I/O bottleneck), RAM เพิ่ม 240 GB, มี Backup ระดับ VM ที่แท้จริง, มี Hardware Support SLA 24×7 4HR จาก Lenovo, และรัน VMware ESXi ด้วย License Enterprise Plus ที่มีอยู่แล้ว
+  </div>
+</div>
+
+</div>
+
+<footer>
+  HAOS Migration — สรุปสำหรับโรงพยาบาล | จัดทำโดย PM Team AYD | อ้างอิง Design Options β-v2 | 2026
+</footer>
+
+</body>
+</html>
