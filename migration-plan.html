@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAOS Migration — แผนการดำเนินงาน 7 วัน</title>
+<style>
+  :root{
+    --ink:#1a2332;--muted:#6b7686;--line:#e5e9f0;--bg:#f5f7fa;--card:#fff;
+    --aya:#2563eb;--it:#ea580c;--day:#16a34a;--peak:#d97706;--night:#b91c1c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","Sukhumvit Set","Noto Sans Thai",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.55;padding:36px 18px}
+  .wrap{max-width:860px;margin:0 auto}
+  header{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:20px}
+  h1{font-size:21px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{font-size:12px;padding:4px 11px;border-radius:99px;background:var(--card);
+    border:1px solid var(--line);font-weight:600}
+  .chip.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.night{background:#fef2f2;border-color:#fecaca;color:var(--night)}
+  .banner{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin-bottom:22px;font-size:13.5px}
+  .banner b{color:var(--ink)} .banner .hl{color:var(--night);font-weight:700}
+  .day{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--day);
+    border-radius:10px;padding:14px 16px;margin-bottom:12px}
+  .day.peak{border-left-color:var(--peak)}
+  .day.night{border-left-color:var(--night);background:#fffafa}
+  .dhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .dno{font-size:12px;font-weight:700;color:#fff;background:var(--ink);
+    padding:2px 9px;border-radius:6px;letter-spacing:.02em}
+  .day.night .dno{background:var(--night)}
+  .dtitle{font-size:15px;font-weight:700}
+  .mode{font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;margin-left:auto}
+  .m-day{background:#eafaf0;color:var(--day)}
+  .m-peak{background:#fef6e7;color:var(--peak)}
+  .m-night{background:#fdecec;color:var(--night)}
+  ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+  li{font-size:13.5px;padding-left:18px;position:relative;color:#2b3648}
+  li::before{content:"";position:absolute;left:3px;top:8px;width:5px;height:5px;
+    border-radius:50%;background:var(--muted)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;color:#fff;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px}
+  .aya{background:var(--aya)} .it{background:var(--it)}
+  .tagline{font-size:11.5px;color:var(--muted);margin-top:7px;padding-left:18px}
+  .legends{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    margin-top:20px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .leg{display:flex;gap:13px;flex-wrap:wrap}
+  .leg span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+  footer{margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5}
+  @media print{body{background:#fff;padding:0}.day{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>HAOS Migration — แผนการดำเนินงาน</h1>
+    <div class="sub">ย้ายฐานข้อมูล + แอปพลิเคชัน OLD → NEW (DB master + reuse replica เดิม) · ระบบโรงพยาบาล 24×7</div>
+    <div class="chips">
+      <span class="chip dark">Execution 7 วัน (Day 1–7)</span>
+      <span class="chip night">🌙 ปิดระบบ 1 คืน (Day 6)</span>
+      <span class="chip">IT เตรียม: NAS + mount</span>
+    </div>
+  </header>
+
+  <div class="banner">
+    <b>สรุปสำหรับผู้บริหาร:</b> งานเตรียมทั้งหมด (seed ข้อมูล, scripts, ทดสอบ, เตรียม cutover)
+    <b>ทำระหว่างวันโดยระบบไม่หยุดบริการ</b> · ใช้เครื่อง replica เดิม (ไม่ต้องลงเครื่องใหม่) ·
+    ระบบหลัก (HIS) <span class="hl">หยุดจริงเพียงคืน Day 6 คืนเดียว</span> ·
+    ระบบค้นหา (ELK) ทำงานต่อเนื่องระหว่าง cutover (ใช้ index เดิม) เหลือเพียงช่วง re-index ใหม่ ≤10 นาทีตอนท้าย ·
+    ระยะเวลายืนยันจาก dry-run (Day 3) · เริ่มนับ 7 วันเมื่อ Day 0 (NAS + access) พร้อม.
+  </div>
+
+  <!-- Day 0 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 0</span><span class="dtitle">เตรียมความพร้อม (Prerequisite)</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>จัดหา NAS ~1TB + mount เป็น share ให้ครบ 3 เครื่อง (main-old, app VM ใหม่, db VM ใหม่)<span class="pill it">IT</span></li>
+      <li>เปิดให้ Ayodia เชื่อม SQL ของ main-old (ใช้ account db_owner ที่มีอยู่)<span class="pill it">IT</span></li>
+      <li>อนุมัติ + นัด maintenance window สำหรับคืน Day 6<span class="pill it">IT</span></li>
+    </ul>
+  </div>
+
+  <!-- Day 1 -->
+  <div class="day peak">
+    <div class="dhead"><span class="dno">DAY 1</span><span class="dtitle">สำรวจ + Seed ข้อมูลตั้งต้น</span><span class="mode m-peak">⚡ online (off-peak)</span></div>
+    <ul>
+      <li>สำรวจ recovery model / ขอบเขตข้อมูล / โฟลเดอร์แอป + ทดสอบเขียน-อ่าน share<span class="pill aya">Ayodia</span></li>
+      <li>Full backup ฐานข้อมูล (~2TB) ขณะระบบทำงาน แล้วขนผ่าน drive ไปเครื่องใหม่ — รันช่วงนอกเวลาเร่งด่วน<span class="pill aya">Ayodia</span></li>
+    </ul>
+  </div>
+
+  <!-- Day 2 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 2</span><span class="dtitle">สร้างระบบ Sync ข้อมูล</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>เขียน script sync ไฟล์แอป + script สำรอง transaction log ขึ้น share<span class="pill aya">Ayodia</span></li>
+      <li>เริ่มส่ง log ต่อเนื่องเข้าเครื่องใหม่ (ระบบเก่ายังทำงานปกติ)<span class="pill aya">Ayodia</span></li>
+    </ul>
+    <div class="tagline">⚙️ script ตั้งเป็น Scheduled Task + เขียน log ลง share → ทำงานต่อเนื่องเองแม้ remote หลุด (ไม่ต้องเฝ้าจอ)</div>
+  </div>
+
+  <!-- Day 3 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 3</span><span class="dtitle">ทดสอบเสมือนจริง (Dry-run)</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>วัดเวลาจริง: cutover ฐานหลัก + rebuild replica + ELK re-index (~10 นาที) → <b>ได้ระยะ downtime ที่แท้จริง</b><span class="pill aya">Ayodia</span></li>
+      <li>ทดสอบ rebuild replica จากฐานใหม่ + ทดสอบ clear/re-index ELK จาก replica<span class="pill aya">Ayodia</span></li>
+      <li>ตรวจสอบความถูกต้อง: FILESTREAM / สิทธิ์ผู้ใช้ / เว็บแอป (บนเครื่องใหม่ที่แยกวง)<span class="pill aya">Ayodia</span></li>
+    </ul>
+  </div>
+
+  <!-- Day 4 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 4</span><span class="dtitle">เตรียมแผน Cutover</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>จัดทำ cutover runbook + rollback plan (แผนถอยกลับหากไม่สำเร็จ)<span class="pill aya">Ayodia</span></li>
+      <li>ปรับ security เครื่องใหม่ + activate license + ตั้งนโยบาย backup ใหม่<span class="pill aya">Ayodia</span></li>
+    </ul>
+  </div>
+
+  <!-- Day 5 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 5</span><span class="dtitle">ซ้อม UAT + เผื่อแก้ปัญหา</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>ซ้อมขั้นตอน cutover + แก้ไขปัญหาที่พบ + เคาะเกณฑ์ go / no-go<span class="pill aya">Ayodia</span><span class="pill it">IT</span></li>
+    </ul>
+  </div>
+
+  <!-- Day 6 -->
+  <div class="day night">
+    <div class="dhead"><span class="dno">DAY 6</span><span class="dtitle">CUTOVER — สลับระบบ</span><span class="mode m-night">🌙 ปิดระบบหลัก (HIS)</span></div>
+    <ul>
+      <li><b>ฐานข้อมูลหลัก:</b> หยุดแอป → ส่ง log ก้อนสุดท้าย → เปิดใช้ฐานข้อมูลเครื่องใหม่ → สลับ network → ตรวจสอบ → เปิดบริการ HIS<span class="pill aya">Ayodia</span><span class="pill it">IT</span></li>
+      <li><b>Replica:</b> กู้สิทธิ์เข้า replica (restart ฐานข้อมูล) → สร้างใหม่จากฐานหลักเครื่องใหม่ (ช่วงนี้ ELK ยังค้นหาได้ด้วย index เดิม)<span class="pill aya">Ayodia</span></li>
+      <li><b>ค้นหา (ELK):</b> clear + re-index จาก replica (~10 นาที) → ค้นหาได้ข้อมูลสด<span class="pill aya">Ayodia</span></li>
+    </ul>
+    <div class="tagline">⏱️ HIS หยุดสั้น (ตามผลวัด Day 3) · ระบบค้นหา (ELK) ทำงานต่อเนื่องบน index เดิม เหลือเพียง ≤10 นาทีช่วง re-index · รวมทุกอย่างไว้คืนเดียว ไม่ปิดระบบซ้ำ</div>
+  </div>
+
+  <!-- Day 7 -->
+  <div class="day">
+    <div class="dhead"><span class="dno">DAY 7</span><span class="dtitle">ตรวจรับ + ส่งมอบ</span><span class="mode m-day">☀️ กลางวัน</span></div>
+    <ul>
+      <li>ตรวจสอบระบบใหม่ + UAT sign-off + เฝ้าระวัง (ระบบ live บนเครื่องใหม่แล้ว)<span class="pill aya">Ayodia</span><span class="pill it">IT</span></li>
+      <li>ปลดระวางเครื่อง DB เก่าหลังระบบเสถียร<span class="pill it">IT</span></li>
+    </ul>
+  </div>
+
+  <div class="legends">
+    <div class="leg">
+      <span><i class="sw" style="background:var(--day)"></i> ☀️ กลางวัน (ระบบทำงานปกติ)</span>
+      <span><i class="sw" style="background:var(--peak)"></i> ⚡ off-peak (ไม่ปิด แต่เลี่ยงเวลาเร่งด่วน)</span>
+      <span><i class="sw" style="background:var(--night)"></i> 🌙 ปิดระบบ</span>
+    </div>
+    <div class="leg">
+      <span><i class="sw aya"></i> Ayodia</span>
+      <span><i class="sw it"></i> IT รพ.</span>
+    </div>
+  </div>
+
+  <footer>
+    หมายเหตุ: นับ 7 วันเริ่มเมื่อ Day 0 พร้อม (NAS + access) · คืน Day 6 ปิดเฉพาะระบบหลัก (HIS) ช่วงสั้น —
+    ระบบค้นหา (ELK) ทำงานต่อเนื่องบน index เดิม มีเพียงช่วง re-index ≤10 นาทีตอนท้าย · ระยะเวลายืนยันจริงจาก dry-run (Day 3) ·
+    ความเสี่ยงเลื่อนหลักอยู่ที่การส่งมอบ Day 0 และการอนุมัติ window จากโรงพยาบาล · จัดทำ 31 พ.ค. 2026
+  </footer>
+
+</div>
+</body>
+</html>
